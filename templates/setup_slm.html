@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}SLM Setup{% endblock %}
+
+{% block content %}
+<h2>Setup SLM</h2>
+
+<form method="post">
+    <label for="slm_type">SLM Type:</label>
+    <select id="slm_type" name="slm_type" required>
+        <option value="virtual">Virtual</option>
+        <option value="hamamatsu">Hamamatsu</option>
+    </select>
+
+    <label for="display_num">Display Number:</label>
+    <input type="number" id="display_num" name="display_num"><br>
+
+    <label for="bitdepth">Bit Depth:</label>
+    <input type="number" id="bitdepth" name="bitdepth"><br>
+
+    <label for="wav_design_um">Wavelength Design (um):</label>
+    <input type="number" step="0.001" id="wav_design_um" name="wav_design_um"><br>
+
+    <label for="wav_um">Wavelength (um):</label>
+    <input type="number" step="0.001" id="wav_um" name="wav_um"><br>
+   
+    <input type="submit" value="Setup SLM">
+</form>
+{% endblock %}
+

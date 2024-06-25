@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Camera Setup{% endblock %}
+
+{% block content %}
+<h2>Setup Camera</h2>
+
+<form method="post">
+    <label for="camera_type">Camera Type:</label>
+    <select id="camera_type" name="camera_type" required>
+        <option value="virtual">Virtual</option>
+        <option value="network">Network</option>
+        <option value="thorcam_scientific_camera">Thorcam Scientific Camera</option>
+    </select><br>
+
+    <label for="camera_url">Camera URL:</label>
+    <input type="text" id="camera_url" name="camera_url"><br>
+
+    <label for="serial_num">Serial Number:</label>
+    <input type="text" id="serial_num" name="serial_num"><br>
+
+
+    <input type="submit" value="Setup Camera">
+</form>
+{% endblock %}
+

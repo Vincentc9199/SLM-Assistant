@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Flask App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>My Flask App</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+                <li><a href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+                <li><a href="{{ url_for('use_pattern') }}">Use Pattern</a></li>
+                <li><a href="{{ url_for('use_add_phase') }}">Use Additional Phase</a></li>
+                <li><a href="{{ url_for('init_hologram') }}">Initialize Hologram</a></li>
+                <li><a href="{{ url_for('calculate') }}">Calculate</a></li>
+                <li><a href="{{ url_for('add_zernike_poly') }}">Add Zernike</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2024 Vincent Costa</p>
+    </footer>
+</body>
+</html>
