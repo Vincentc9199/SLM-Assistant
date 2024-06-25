@@ -22,7 +22,7 @@ app.secret_key = os.urandom(24)
 # Global variables
 iface = Interface.SLMSuiteInterface()
 pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
-computational_space = (2048, 2048)
+computational_space = [2048, 2048]
 n_iterations = 20
 phase_mgr = None
 config = None
@@ -101,7 +101,6 @@ def setup_slm():
 
         slm_settings['slm_type'] = slm_type
         
-
         print("SLM setup succesful") 
         return redirect(url_for('setup_slm'))
 
