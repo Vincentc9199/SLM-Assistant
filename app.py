@@ -76,6 +76,7 @@ def setup_slm():
     if request.method == 'POST':
 
         slm_type = request.form['slm_type']
+        print(slm_type)
 
         if slm_type == "virtual":
             slm = iface.set_SLM()
@@ -83,9 +84,14 @@ def setup_slm():
         elif slm_type == "hamamatsu":
             
             display_num = int(request.form['display_num'])
+            print(display_num)
             bitdepth = int(request.form['bitdepth'])
+            print(bitdepth)
             wav_design_um = float(request.form['wav_design_um'])
-            wav_um = float(request.form['wav_um'])    
+            print(wav_design_um)
+            wav_um = float(request.form['wav_um'])
+            print(wav_um) 
+
             slm = ScreenMirrored(display_num, bitdepth, wav_design_um=wav_design_um, wav_um=wav_um)
 
             slm_settings['display_num'] = display_num
