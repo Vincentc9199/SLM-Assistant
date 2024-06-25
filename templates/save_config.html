@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Use Pattern{% endblock %}
+{% block title %}Save Config{% endblock %}
 
 {% block content %}
-    <h1>Use Pattern</h1>
+    <h1>Save Config</h1>
     <form method="POST">
-        <label for="fname">File Path:</label>
-        <input type="text" id="fname" name="fname"><br><br>
+        <label for="fname">Save File Path:</label>
+        <input type="text" id="fname" name="fname" required><br><br>
         <button type="submit">Submit</button>
     </form>
 
-    {% if pattern_load_history %}
-        <h2>History of Loaded Pattern Paths</h2>
+    {% if config_save_history %}
+        <h2>History of Saved Configs</h2>
         <table>
             <tr>
                 <th>File Path</th>
                 <th>Date and Time</th>
             </tr>
-            {% for entry in pattern_load_history %}
+            {% for entry in config_save_history %}
                 <tr>
                     <td>{{ entry.fname }}</td>
                     <td>{{ entry.upload_time }}</td>

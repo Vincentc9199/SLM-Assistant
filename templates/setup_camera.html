@@ -1,26 +1,56 @@
 {% extends "base.html" %}
 
-{% block title %}Camera Setup{% endblock %}
+{% block title %}Setup Camera{% endblock %}
 
 {% block content %}
-<h2>Setup Camera</h2>
+    <h1>Setup Camera</h1>
+    <form method="POST">
+        <label for="camera_type">Camera Type:</label>
+        <select id="camera_type" name="camera_type" onchange="showCameraFields(this.value)">
+            <option value="virtual">Virtual</option>
+            <option value="network">Network</option>
+            <option value="thorcam_scientific_camera">Thorcam Scientific Camera</option>
+        </select><br><br>
 
-<form method="post">
-    <label for="camera_type">Camera Type:</label>
-    <select id="camera_type" name="camera_type" required>
-        <option value="virtual">Virtual</option>
-        <option value="network">Network</option>
-        <option value="thorcam_scientific_camera">Thorcam Scientific Camera</option>
-    </select><br>
+        <div id="network_fields" style="display:none;">
+            <label for="camera_url">Camera URL:</label>
+            <input type="url" id="camera_url" name="camera_url"><br><br>
+        </div>
 
-    <label for="camera_url">Camera URL:</label>
-    <input type="text" id="camera_url" name="camera_url"><br>
+        <div id="thorcam_fields" style="display:none;">
+            <label for="serial_num">Serial Number:</label>
+            <input type="text" id="serial_num" name="serial_num"><br><br>
+        </div>
 
-    <label for="serial_num">Serial Number:</label>
-    <input type="text" id="serial_num" name="serial_num"><br>
+        <button type="submit">Submit</button>
+    </form>
 
+    {% if camera_settings %}
+        <h2>Current Camera Settings</h2>
+        <p>Camera Type: {{ camera_settings.camera_type }}</p>
+        {% if camera_settings.camera_type == 'network' %}
+            <p>Camera URL: {{ camera_settings.camera_url }}</p>
+        {% elif camera_settings.camera_type == 'thorcam_scientific_camera' %}
+            <p>Serial Number: {{ camera_settings.serial_num }}</p>
+        {% endif %}
+    {% endif %}
 
-    <input type="submit" value="Setup Camera">
-</form>
+    <script>
+        function showCameraFields(cameraType) {
+            var networkFields = document.getElementById('network_fields');
+            var thorcamFields = document.getElementById('thorcam_fields');
+
+            if (cameraType === 'network') {
+                networkFields.style.display = 'block';
+                thorcamFields.style.display = 'none';
+            } else if (cameraType === 'thorcam_scientific_camera') {
+                networkFields.style.display = 'none';
+                thorcamFields.style.display = 'block';
+            } else {
+                networkFields.style.display = 'none';
+                thorcamFields.style.display = 'none';
+            }
+        }
+    </script>
 {% endblock %}
 

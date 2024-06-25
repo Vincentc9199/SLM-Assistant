@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Select Points with Fabric.js{% endblock %}
+
+{% block content %}
+<h2>Select Points with Fabric.js</h2>
+<canvas id="canvas" width="600" height="600"></canvas>
+<div class="button-container">
+    <button onclick="submitPoints()">Submit Points</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+
+<script>
+    var canvas = new fabric.Canvas('canvas');
+    var xCoords = [];
+    var yCoords = [];
+
+    // Create grid of pixels
+    var numPixels = 30; // Adjust number of pixels as needed
+    var pixelSize = canvas.width / numPixels;
+
+    for (var i = 0; i < numPixels; i++) {
+        for (var j = 0; j < numPixels; j++) {
+            var pixel = new fabric.Rect({
+                left: i * pixelSize,
+                top: j * pixelSize,
+                width: pixelSize,
+                height: pixelSize,
+                fill: 'white',
+                stroke: '#ccc',
+                strokeWidth: 1,
+                selectable: false,
+                hasControls: false,
+                hasBorders: false,
+                hoverCursor: 'pointer'
+            });
+
+            pixel.set('data-x', i);
+            pixel.set('data-y', j);
+
+            canvas.add(pixel);
+
+            pixel.on('mousedown', function(options) {
+                var x = this.get('data-x');
+                var y = this.get('data-y');
+                var index = xCoords.indexOf(x); // Check if x already exists
+
+                if (index === -1) {
+                    // If x does not exist, add new point
+                    xCoords.push(x);
+                    yCoords.push(y);
+                    this.set('fill', 'red');
+                } else {
+                    // If x exists, remove the point
+                    xCoords.splice(index, 1);
+                    yCoords.splice(index, 1);
+                    this.set('fill', 'white');
+                }
+                console.log('xCoords:', xCoords);
+                console.log('yCoords:', yCoords);
+                canvas.renderAll();
+            });
+        }
+    }
+
+
+function submitPoints() {
+    // Prepare data to send
+    var data = {
+            xCoords: xCoords,
+            yCoords: yCoords
+        };
+
+    // Send points to backend via AJAX
+    fetch('{{ url_for('calculate_grid') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json' // Set Content-Type header
+        },
+        body: JSON.stringify(data) // Convert data to JSON format
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Points submitted:', data);
+        alert('Points submitted successfully!');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting points.');
+    });
+}
+</script>
+{% endblock %}
+

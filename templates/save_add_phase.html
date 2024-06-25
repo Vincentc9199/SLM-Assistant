@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Save Additional Phase{% endblock %}
+
+{% block content %}
+    <h1>Save Additional Phase</h1>
+    <form method="POST">
+        <label for="save_path">Save File Path:</label>
+        <input type="text" id="save_path" name="save_path" required><br><br>
+        <label for="save_name">Save Name:</label>
+        <input type="text" id="save_name" name="save_name" required><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if add_save_history %}
+        <h2>History of Saved Additional Phase</h2>
+        <table>
+            <tr>
+                <th>File Path</th>
+                <th>File Name</th>
+                <th>Date and Time</th>
+            </tr>
+            {% for entry in add_save_history %}
+                <tr>
+                    <td>{{ entry.save_path }}</td>
+                    <td>{{ entry.save_name }}</td>
+                    <td>{{ entry.upload_time }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endblock %}

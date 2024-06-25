@@ -47,3 +47,9 @@ footer {
     text-align: center;
     padding: 1rem;
 }
+canvas {
+    border: 1px solid #ccc;
+}
+.button-container {
+    margin-top: 20px;
+}

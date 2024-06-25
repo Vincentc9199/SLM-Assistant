@@ -6,6 +6,8 @@ import slmsuite.hardware.cameraslms
 import slmsuite.holography.algorithms
 import slmsuite.holography.toolbox
 import slmsuite.holography.toolbox.phase
+import matplotlib
+matplotlib.use('Agg')  # Use the 'Agg' backend
 import matplotlib.pyplot as plt
 
 # This class acts as an interface between the server and the slmsuite library

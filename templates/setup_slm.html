@@ -1,30 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}SLM Setup{% endblock %}
+{% block title %}Setup SLM{% endblock %}
 
 {% block content %}
-<h2>Setup SLM</h2>
+    <h1>Setup SLM</h1>
+    <form method="POST">
+        <label for="slm_type">SLM Type:</label>
+        <select id="slm_type" name="slm_type" onchange="showHamamatsuFields(this.value)">
+            <option value="virtual">Virtual</option>
+            <option value="hamamatsu">Hamamatsu</option>
+        </select><br><br>
 
-<form method="post">
-    <label for="slm_type">SLM Type:</label>
-    <select id="slm_type" name="slm_type" required>
-        <option value="virtual">Virtual</option>
-        <option value="hamamatsu">Hamamatsu</option>
-    </select>
+        <div id="hamamatsu_fields" style="display:none;">
+            <label for="display_num">Display Number:</label>
+            <input type="number" id="display_num" name="display_num"><br><br>
 
-    <label for="display_num">Display Number:</label>
-    <input type="number" id="display_num" name="display_num"><br>
+            <label for="bitdepth">Bit Depth:</label>
+            <input type="number" id="bitdepth" name="bitdepth"><br><br>
 
-    <label for="bitdepth">Bit Depth:</label>
-    <input type="number" id="bitdepth" name="bitdepth"><br>
+            <label for="wav_design_um">Wave Design (um):</label>
+            <input type="number" id="wav_design_um" name="wav_design_um" step="0.001"><br><br>
 
-    <label for="wav_design_um">Wavelength Design (um):</label>
-    <input type="number" step="0.001" id="wav_design_um" name="wav_design_um"><br>
+            <label for="wav_um">Wave (um):</label>
+            <input type="number" id="wav_um" name="wav_um" step="0.001"><br><br>
+        </div>
 
-    <label for="wav_um">Wavelength (um):</label>
-    <input type="number" step="0.001" id="wav_um" name="wav_um"><br>
-   
-    <input type="submit" value="Setup SLM">
-</form>
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if slm_settings %}
+        <h2>Current SLM Settings</h2>
+        <p>SLM Type: {{ slm_settings.slm_type }}</p>
+        {% if slm_type == 'hamamatsu' %}
+            <p>Display Number: {{ slm_settings.display_num }}</p>
+            <p>Bit Depth: {{ slm_settings.bitdepth }}</p>
+            <p>Wave Design (um): {{ slm_settings.wav_design_um }}</p>
+            <p>Wave (um): {{ slm_settings.wav_um }}</p>
+        {% endif %}
+    {% endif %}
+
+    <script>
+        function showHamamatsuFields(slmType) {
+            var hamamatsuFields = document.getElementById('hamamatsu_fields');
+            if (slmType === 'hamamatsu') {
+                hamamatsuFields.style.display = 'block';
+            } else {
+                hamamatsuFields.style.display = 'none';
+            }
+        }
+    </script>
 {% endblock %}
-

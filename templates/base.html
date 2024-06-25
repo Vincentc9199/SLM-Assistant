@@ -3,22 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Flask App{% endblock %}</title>
+    <title>{% block title %}SLM Assistant{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <header>
-        <h1>My Flask App</h1>
+        <h1>SLM Assistant</h1>
         <nav>
             <ul>
                 <li><a href="{{ url_for('home') }}">Home</a></li>
                 <li><a href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
                 <li><a href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
-                <li><a href="{{ url_for('use_pattern') }}">Use Pattern</a></li>
-                <li><a href="{{ url_for('use_add_phase') }}">Use Additional Phase</a></li>
-                <li><a href="{{ url_for('init_hologram') }}">Initialize Hologram</a></li>
+                <li><a href="{{ url_for('use_pattern') }}">Load Base Pattern</a></li>
+                <li><a href="{{ url_for('use_add_phase') }}">Load Additional Phase</a></li>
                 <li><a href="{{ url_for('calculate') }}">Calculate</a></li>
-                <li><a href="{{ url_for('add_zernike_poly') }}">Add Zernike</a></li>
+                <li><a href="{{ url_for('calculate_grid') }}">Calculate Grid</a></li>
+                <li><a href="{{ url_for('save_calculation') }}">Save Calculation</a></li>
+                <li><a href="{{ url_for('save_add_phase') }}">Save Additional Phase</a></li>
+                <li><a href="{{ url_for('use_correction') }}">Load Correction</a></li>
+                <li><a href="{{ url_for('add_pattern_to_add_phase') }}">Add Pattern to Additional Phase</a></li>
+                <li><a href="{{ url_for('add_fresnel_lens') }}">Add Fresnel Lens</a></li>
+                <li><a href="{{ url_for('add_offset') }}">Add Offset</a></li>
+                <li><a href="{{ url_for('add_zernike_poly') }}">Add Zernikes</a></li>
+                <li><a href="{{ url_for('reset_pattern') }}">Reset Base Pattern</a></li>
+                <li><a href="{{ url_for('reset_additional_phase') }}">Reset Additional Phase</a></li>
+                <li><a href="{{ url_for('use_aperture') }}">Add Aperture</a></li>
+                <li><a href="{{ url_for('reset_aperture') }}">Reset Aperture</a></li>
+                <li><a href="{{ url_for('project') }}">Project to SLM</a></li>
+                <li><a href="{{ url_for('get_current_phase_info') }}">Get Current Phase Info</a></li>
+                <li><a href="{{ url_for('load_config') }}">Load Config</a></li>
+                <li><a href="{{ url_for('save_config') }}">Save Config</a></li>
             </ul>
         </nav>
     </header>
