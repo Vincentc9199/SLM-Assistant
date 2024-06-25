@@ -92,6 +92,11 @@ def setup_slm():
             wav_um = float(request.form['wav_um'])
             print(wav_um) 
 
+            display_num = 1
+            bitdepth = 8
+            wav_design_um = 0.7
+            wav_um = 0.616
+            
             slm = ScreenMirrored(display_num, bitdepth, wav_design_um=wav_design_um, wav_um=wav_um)
 
             slm_settings['display_num'] = display_num
