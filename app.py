@@ -36,7 +36,7 @@ slm_settings = {}
 #slm = iface.set_SLM()
 
 # Hardware setup
-
+"""
 slm_settings['slm_type'] = 'hamamatsu'
 slm_settings['display_num'] = 1
 slm_settings['bitdepth'] = 8
@@ -49,7 +49,7 @@ slm = ScreenMirrored(slm_settings['display_num'], slm_settings['bitdepth'], wav_
 phase_mgr = PhaseManager.PhaseManager(slm)
 wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
 iface.set_SLM(wrapped_slm)
-
+"""
 
 # Camera settings
 camera_settings = {}
@@ -71,7 +71,7 @@ config_save_history = []
 def home():
     return render_template('home.html')
 
-"""
+
 # SLM Setup Page
 @app.route('/setup_slm', methods=['GET', 'POST'])
 def setup_slm():
@@ -117,7 +117,7 @@ def setup_slm():
         return redirect(url_for('setup_slm'))
 
     return render_template('setup_slm.html', slm_settings=slm_settings)
-"""
+
 """
 @app.route('/setup_camera', methods=['GET', 'POST'])
 def setup_camera():
