@@ -18,13 +18,12 @@ import datetime
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-
 # Global variables
 iface = Interface.SLMSuiteInterface()
-pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
-computational_space = [2048, 2048]
-n_iterations = 20
 phase_mgr = None
+pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
+computational_space = (2048, 2048)
+n_iterations = 20
 config = None
 displays = screeninfo.get_monitors()
 current_phase_info = ""
@@ -32,40 +31,47 @@ current_phase_info = ""
 # SLM settings
 slm_settings = {}
 
+# Virtual setup
+#slm_settings['slm_type'] = 'virtual'
+#slm = iface.set_SLM()
+
+# Hardware setup
+
+slm_settings['slm_type'] = 'hamamatsu'
+slm_settings['display_num'] = 1
+slm_settings['bitdepth'] = 8
+slm_settings['wav_design_um'] = 0.7
+slm_settings['wav_um'] = 0.616
+
+slm = ScreenMirrored(slm_settings['display_num'], slm_settings['bitdepth'], wav_design_um=slm_settings['wav_design_um'], wav_um=slm_settings['wav_um'])
+
+
+phase_mgr = PhaseManager.PhaseManager(slm)
+wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+iface.set_SLM(wrapped_slm)
+
+
 # Camera settings
 camera_settings = {}
 
-# Pattern load history
+# Virtual setup
+camera_settings['camera_type'] = 'virtual'
+camera = iface.set_camera()
+
+# History lists
 pattern_load_history = []
-
-# Additional load history
 add_load_history = []
-
-# Config load history
 config_load_history = []
-
-# Calculation save history
 calculation_save_history = []
-
-# Additional phase save history
 add_save_history = []
-
-# Config save history
 config_save_history = []
-
-# GLobal Functions
-def load_pattern(path):
-    if re.match(r'[A-Z]:', path) is None:
-        # check to see if it's an absolute path
-        path = pattern_path + path
-    _,data = utils.load_slm_calculation(path, 0, 1)
-    return data["slm_phase"]
 
 # Home page
 @app.route('/')
 def home():
     return render_template('home.html')
 
+"""
 # SLM Setup Page
 @app.route('/setup_slm', methods=['GET', 'POST'])
 def setup_slm():
@@ -91,11 +97,6 @@ def setup_slm():
             print(wav_design_um)
             wav_um = float(request.form['wav_um'])
             print(wav_um) 
-
-            display_num = 1
-            bitdepth = 8
-            wav_design_um = 0.7
-            wav_um = 0.616
             
             slm = ScreenMirrored(display_num, bitdepth, wav_design_um=wav_design_um, wav_um=wav_um)
 
@@ -116,7 +117,8 @@ def setup_slm():
         return redirect(url_for('setup_slm'))
 
     return render_template('setup_slm.html', slm_settings=slm_settings)
-
+"""
+"""
 @app.route('/setup_camera', methods=['GET', 'POST'])
 def setup_camera():
     global iface
@@ -156,6 +158,7 @@ def setup_camera():
         return redirect(url_for('setup_camera'))
 
     return render_template('setup_camera.html', camera_settings=camera_settings)
+"""
 
 @app.route('/use_pattern', methods=['GET', 'POST'])
 def use_pattern():
@@ -352,9 +355,13 @@ def save_calculation():
         if re.match(r'[A-Z]:', save_path) is None:
             # check to see if it's an absolute path
             save_path = pattern_path + save_path
+        
+        print(save_path)
+
         save_options = dict()
         save_options["config"] = True # This option saves the configuration of this run of the algorithm
         save_options["slm_pattern"] = True # This option saves the slm phase pattern and amplitude pattern (the amplitude pattern is not calculated. So far, the above have assumed a constant amplitude and we have not described functionality to change this)
+        # This was changed to false to fix a bug, not sure why this stopped working
         save_options["ff_pattern"] = True # This option saves the far field amplitude pattern
         save_options["target"] = True # This option saves the desired target
         save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
@@ -647,9 +654,12 @@ def load_config():
         
         for key in config:
             if key == "pattern":
-                phase = load_pattern(config["pattern"])
-
-
+                path = config["pattern"]
+                if re.match(r'[A-Z]:', path) is None:
+                # check to see if it's an absolute path
+                    path = pattern_path + path
+                _,data = utils.load_slm_calculation(path, 0, 1)
+                phase = data["slm_phase"]
                 phase_mgr.set_base(phase, fname)
             #elif key == "fourier_calibration":
                 #self.send_load_fourier_calibration(config["fourier_calibration"])
@@ -904,6 +914,3 @@ def calculate_square_array2():
     
     return render_template('calculate_square_array2.html')
 """
-
-if __name__ == '__main__':
-    app.run(debug=False)
