@@ -1,0 +1,7 @@
+waitress
+Flask
+slmsuite
+PyYAML
+pyzmq
+mss
+pyglet==1.5.28
