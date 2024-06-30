@@ -14,6 +14,7 @@ import ast
 import screeninfo
 import mss
 import datetime
+import window
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -584,7 +585,8 @@ def project():
     global phase_mgr
 
     if request.method == 'POST':
-        iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+        #iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+        window.on_resize(200, 300)
         print("Projected to SLM") 
         return redirect(url_for('project'))
     
