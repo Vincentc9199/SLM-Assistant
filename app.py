@@ -14,7 +14,8 @@ import ast
 import screeninfo
 import mss
 import datetime
-import window
+import pyglet
+import threading
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -46,11 +47,37 @@ slm_settings['wav_um'] = 0.616
 
 slm = ScreenMirrored(slm_settings['display_num'], slm_settings['bitdepth'], wav_design_um=slm_settings['wav_design_um'], wav_um=slm_settings['wav_um'])
 
-
 phase_mgr = PhaseManager.PhaseManager(slm)
 wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
 iface.set_SLM(wrapped_slm)
 """
+
+update_flag = threading.Event()
+
+def create_slm():
+    global iface, phase_mgr, slm_settings, update_flag
+
+    def update_slm(dt):
+        global update_flag, iface, phase_mgr
+
+        if update_flag.is_set():
+            iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+            update_flag.clear()
+            
+    slm_settings['slm_type'] = 'hamamatsu'
+    slm_settings['display_num'] = 1
+    slm_settings['bitdepth'] = 8
+    slm_settings['wav_design_um'] = 0.7
+    slm_settings['wav_um'] = 0.616
+
+    slm = ScreenMirrored(slm_settings['display_num'], slm_settings['bitdepth'], wav_design_um=slm_settings['wav_design_um'], wav_um=slm_settings['wav_um'])
+
+    phase_mgr = PhaseManager.PhaseManager(slm)
+    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+    iface.set_SLM(wrapped_slm)
+
+    pyglet.clock.schedule_interval(update_slm, 1/60.0)
+    pyglet.app.run()
 
 # Camera settings
 camera_settings = {}
@@ -72,7 +99,7 @@ config_save_history = []
 def home():
     return render_template('home.html')
 
-
+"""
 # SLM Setup Page
 @app.route('/setup_slm', methods=['GET', 'POST'])
 def setup_slm():
@@ -118,7 +145,7 @@ def setup_slm():
         return redirect(url_for('setup_slm'))
 
     return render_template('setup_slm.html', slm_settings=slm_settings)
-
+"""
 
 @app.route('/setup_camera', methods=['GET', 'POST'])
 def setup_camera():
@@ -583,10 +610,10 @@ def reset_aperture():
 def project():
     global iface
     global phase_mgr
+    global update_flag
 
     if request.method == 'POST':
-        #iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
-        window.on_resize(200, 300)
+        update_flag.set()
         print("Projected to SLM") 
         return redirect(url_for('project'))
     
@@ -916,3 +943,7 @@ def calculate_square_array2():
     
     return render_template('calculate_square_array2.html')
 """
+
+if __name__ == '__main':
+    threading.Thread(target=app.run, daemon=True).start()
+    create_slm()
