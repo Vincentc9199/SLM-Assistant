@@ -86,8 +86,8 @@ def create_slm():
 camera_settings = {}
 
 # Virtual setup
-#camera_settings['camera_type'] = 'virtual'
-#camera = iface.set_camera()
+camera_settings['camera_type'] = 'virtual'
+camera = iface.set_camera()
 
 # History lists
 pattern_load_history = []
@@ -148,7 +148,7 @@ def setup_slm():
         return redirect(url_for('setup_slm'))
 
     return render_template('setup_slm.html', slm_settings=slm_settings)
-"""
+
 
 @app.route('/setup_camera', methods=['GET', 'POST'])
 def setup_camera():
@@ -189,7 +189,7 @@ def setup_camera():
         return redirect(url_for('setup_camera'))
 
     return render_template('setup_camera.html', camera_settings=camera_settings)
-
+"""
 
 @app.route('/use_pattern', methods=['GET', 'POST'])
 def use_pattern():
