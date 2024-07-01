@@ -33,6 +33,12 @@ current_phase_info = ""
 # SLM settings
 slm_settings = {}
 
+slm_settings['slm_type'] = 'hamamatsu'
+slm_settings['display_num'] = 1
+slm_settings['bitdepth'] = 8
+slm_settings['wav_design_um'] = 0.7
+slm_settings['wav_um'] = 0.616
+
 # Virtual setup
 #slm_settings['slm_type'] = 'virtual'
 #slm = iface.set_SLM()
@@ -54,29 +60,26 @@ iface.set_SLM(wrapped_slm)
 
 update_flag = threading.Event()
 
-def create_slm():
-    global iface, phase_mgr, slm_settings, update_flag
-
-    def update_slm(dt):
+def update_slm(dt):
         global update_flag, iface, phase_mgr
 
         if update_flag.is_set():
             iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
             update_flag.clear()
-            
-    slm_settings['slm_type'] = 'hamamatsu'
-    slm_settings['display_num'] = 1
-    slm_settings['bitdepth'] = 8
-    slm_settings['wav_design_um'] = 0.7
-    slm_settings['wav_um'] = 0.616
 
-    slm = ScreenMirrored(slm_settings['display_num'], slm_settings['bitdepth'], wav_design_um=slm_settings['wav_design_um'], wav_um=slm_settings['wav_um'])
+def create_slm():
+    global iface, phase_mgr, slm_settings
+
+    slm = ScreenMirrored(slm_settings['display_num'], 
+                         slm_settings['bitdepth'], 
+                         wav_design_um=slm_settings['wav_design_um'], 
+                         wav_um=slm_settings['wav_um'])
 
     phase_mgr = PhaseManager.PhaseManager(slm)
     wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
     iface.set_SLM(wrapped_slm)
 
-    pyglet.clock.schedule_interval(update_slm, 1/60.0)
+    pyglet.clock.schedule(update_slm)
     pyglet.app.run()
 
 # Camera settings
@@ -608,8 +611,6 @@ def reset_aperture():
 
 @app.route('/project', methods=['GET', 'POST'])
 def project():
-    global iface
-    global phase_mgr
     global update_flag
 
     if request.method == 'POST':
@@ -944,6 +945,6 @@ def calculate_square_array2():
     return render_template('calculate_square_array2.html')
 """
 
-if __name__ == '__main':
-    threading.Thread(target=app.run, daemon=True).start()
+if __name__ == '__main__':
+    threading.Thread(target=app.run, kwargs={'debug':False}, daemon=True).start()
     create_slm()
