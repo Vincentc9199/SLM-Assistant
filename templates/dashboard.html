@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SLM Assistant{% endblock %}
+
+{% block content %}
+    <h1>Dashboard</h1>
+
+    <h2>Select SLM</h2>
+    <form action="{{ url_for('select_slm') }}" method="POST">
+        <label for="slm_num">SLM Number:</label>
+        <input type="number" id="slm_num" name="slm_num">
+        <button type="submit">Select SLM</button>
+    </form>
+
+    <h2>Current Phase Info</h2>
+    
+    <table>
+        <tr>
+            <th>Base</th>
+            <th>Additional</th>
+            <th>Aperture</th>
+        </tr>
+        <tr>
+            <td>{{ current_phase_info[0] }}</td>
+            <td>{{ current_phase_info[1] }}</td>
+            <td>{{ current_phase_info[2] }}</td>
+        </tr>
+    </table>
+
+    <h2>Current SLM Info</h2>
+    
+    <table>
+        <tr>
+            <th>Display Number</th>
+            <th>Bitdepth</th>
+            <th>Design Wavelength</th>
+            <th>Wavelength</th>
+        </tr>
+        <tr>
+            <td>{{ current_slm_settings['display_num'] }}</td>
+            <td>{{ current_slm_settings['bitdepth'] }}</td>
+            <td>{{ current_slm_settings['wav_design_um'] }}</td>
+            <td>{{ current_slm_settings['wav_um'] }}</td>
+        </tr>
+    </table>
+    
+    <h2>Project to SLM</h2>
+    <form action="{{ url_for('project') }}" method="POST">
+        <button type="submit">Project to SLM</button>
+    </form>
+
+    <h2>Screenshot of SLM</h2>
+    {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
+        <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" alt="Screenshot of the SLM">
+    {% endif %}
+
+    <h2>Targets</h2>
+    {% if phase_mgr.base_source %}
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+        <div id="plot" style="width: 100%; height: 100vh;"></div>
+        <script>
+            fetch('/display_targets')
+                .then(response => response.json())
+                .then(data => {
+                    const trace = {
+                        x: data.x,
+                        y: data.y,
+                        mode: 'markers',
+                        type: 'scatter'
+                    };
+                    const layout = {
+                        title: 'Intended Target Array',
+                        xaxis: { title: 'k-x' },
+                        yaxis: { title: 'k-y' },
+                        width: 800,
+                        height: 800
+                    };
+                    Plotly.newPlot('plot', [trace], layout);
+                });
+        </script>
+    {% endif %}
+{% endblock %}

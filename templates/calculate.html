@@ -1,10 +1,8 @@
-{% extends "base.html" %}
+{% extends "base_pattern.html" %}
 
-{% block title %}Calculate{% endblock %}
+{% block get_base %}
 
-{% block content %}
-
-<h2>Calculate</h2>
+<h2>Calculate: Input Coordinates</h2>
 
 <script>
     function addPoint() {
@@ -26,7 +24,6 @@
     }
 </script>
 
-
 <h3>Input Coordinates</h3>
 <form method="post">
     <div id="coordinates-container">
@@ -41,6 +38,10 @@
     <input type="number" id="iteration_number" name="iteration_number"><br><br>
     <label for="guess_path">Initial Guess File Path:</label>
     <input type="text" id="guess_path" name="guess_path"><br><br>
-    <input type="submit" value="Submit">
+    <label for="save_path">Save File Path:</label>
+    <input type="text" id="save_path" name="save_path"><br><br>
+    <label for="save_name">Save Name:</label>
+    <input type="text" id="save_name" name="save_name" required><br><br>
+    <input type="submit" value="Start Calculation">
 </form>
 {% endblock %}

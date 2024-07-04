@@ -1,28 +1,17 @@
-{% extends "base.html" %}
+{% extends "additional_pattern.html" %}
 
-{% block title %}Use Additional Phase{% endblock %}
-
-{% block content %}
-    <h1>Use Additional Phase</h1>
-    <form method="POST">
-        <label for="fname">File Path:</label>
-        <input type="text" id="fname" name="fname" required><br><br>
-        <button type="submit">Submit</button>
+{% block get_additional %}
+    <h2>Load Additional Patterns from File</h2>
+    <form action="{{ url_for('use_add_phase') }}" method="POST" enctype="multipart/form-data">
+        <label for="fname">File Name:</label>
+        <input type="file" id="fname" name="fname"><br><br>
+        <input type="submit" value="Upload">
     </form>
 
-    {% if add_path_history %}
-        <h2>History of Loaded Additional Phase Paths</h2>
-        <table>
-            <tr>
-                <th>File Path</th>
-                <th>Date and Time</th>
-            </tr>
-            {% for entry in add_load_history %}
-                <tr>
-                    <td>{{ entry.fname }}</td>
-                    <td>{{ entry.upload_time }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
+    <h2>Load Additional Patterns from File (On top of existing additional patterns)</h2>
+    <form action="{{ url_for('add_pattern_to_add_phase') }}" method="POST" enctype="multipart/form-data">
+        <label for="path">File Name:</label>
+        <input type="file" id="path" name="path"><br><br>
+        <input type="submit" value="Upload">
+    </form>
 {% endblock %}

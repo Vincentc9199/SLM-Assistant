@@ -9,11 +9,12 @@ import CorrectedSLM
 import utils
 import re
 import numpy as np
-import yaml
-import ast
+#import yaml
+#import ast
 #TODO figure out if I can use pyglet instead
-#import screeninfo
-import mss
+#TODO try mss directly
+import screeninfo
+import mss.tools
 import datetime
 import pyglet
 import threading
@@ -22,151 +23,698 @@ import threading
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Interface with slmsuite
-iface = Interface.SLMSuiteInterface()
-
-#  Phase manager to store phase patterns
-phase_mgr = None
-
-# File path where phase patterns are stored
-pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
-
-# Default computational space
-computational_space = (2048, 2048)
-
-# Default number of iterations for GS algo
-n_iterations = 20
-
-#config = None
-
-#TODO figure out if I can use pyglet instead
-#displays = screeninfo.get_monitors()
-
-# String to store current phase info
-current_phase_info = ""
-
-# Dictionary to store SLM settings
-slm_settings = {}
-slm_settings['slm_type'] = 'hamamatsu'
-slm_settings['display_num'] = 1
-slm_settings['bitdepth'] = 8
-slm_settings['wav_design_um'] = 0.7
-slm_settings['wav_um'] = 0.616
-
-# Virtual setup (uncomment two lines underneath to work with a virtual in the absence of hardware)
-#slm_settings['slm_type'] = 'virtual'
-#slm = iface.set_SLM()
-
-# Flag to control updating the projection on the slm
-update_flag = threading.Event()
-
-# Function that updates the pattern projected on the slm
-def update_slm(dt):
-        global update_flag, iface, phase_mgr
-
-        # Check if the flag is set
-        if update_flag.is_set():
-            # Project pattern onto slm
-            iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
-            # Clear the flag
-            update_flag.clear()
-
-# Function that creates the slm
-def create_slm():
-    global iface, phase_mgr, slm_settings
-
-    # Create the fullscreen pyglet window for the slm
-    slm = ScreenMirrored(slm_settings['display_num'], 
-                         slm_settings['bitdepth'], 
-                         wav_design_um=slm_settings['wav_design_um'], 
-                         wav_um=slm_settings['wav_um'])
-
-    # Create the phase manager for the slm
-    phase_mgr = PhaseManager.PhaseManager(slm)
-    # Wrap the slm with the phase manager
-    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
-    # Set as the slm in the interface
-    iface.set_SLM(wrapped_slm)
-
-    # Run the update function repeatedly
+def start_pyglet_app():
+    #TODO: try custom event handler instead
+    pyglet.clock.schedule(create_slm)
     pyglet.clock.schedule(update_slm)
-    # Start a pyglet app containing the window
     pyglet.app.run()
 
-# Camera settings
-camera_settings = {}
-
-# Set camera as virtual in the interface in the absence of hardware
-camera_settings['camera_type'] = 'virtual'
-camera = iface.set_camera()
-
-# Lists storing history for various actions
+# Lists storing history of loaded base patterns
 base_load_history = []
-add_load_history = []
-config_load_history = []
-base_save_history = []
-add_save_history = []
-config_save_history = []
 
 # Function to add the pattern file path if just a file name is given
+#This is Windows specific because filepaths start with C:
 def add_pattern_path(fname):
     # check to see if it's an absolute path
     if re.match(r'[A-Z]:', fname) is None:
         # if just name, add pattern path
         return pattern_path + fname
-    return fname
+    else:
+        return fname
+    
+#TODO: have user input these
+# File path where phase patterns are stored
+pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
+# Default computational space
+computational_space = (2048, 2048)
+# Default number of iterations for GS algo
+n_iterations = 20
 
-# Home page
-@app.route('/')
-def home():
-    return render_template('home.html')
+slm_list = []
+current_slm_settings = {}
+setup_slm_settings = {}
+slm_num = 1
 
-"""
-# SLM Setup Page
-@app.route('/setup_slm', methods=['GET', 'POST'])
-def setup_slm():
-    global iface
-    global phase_mgr
-    global slm_settings
+# Flag to control creating an slm
+create_flag = threading.Event()
+
+@app.route('/setup', methods=['GET', 'POST'])
+def setup():
+    
+    return render_template('setup.html')
+
+@app.route('/setup_calculation', methods=['GET', 'POST'])
+def setup_calculation():
+    global pattern_path, computational_space, n_iterations
 
     if request.method == 'POST':
 
-        slm_type = request.form['slm_type']
-        print(slm_type)
+        pattern_path = request.form['pattern_path']
+        computational_space = request.form['computational_space']
+        computational_space = (computational_space, computational_space)
+        n_iterations = int(request.form['n_iterations'])
 
-        if slm_type == "virtual":
-            slm = iface.set_SLM()
+        return redirect(url_for('setup_calculation'))
+    
+    return render_template('setup_calculation.html')
+
+@app.route('/setup_slm', methods=['GET', 'POST'])
+def setup_slm():
+    global setup_slm_settings, create_flag
+
+    if request.method == 'POST':
+
+        display_num = int(request.form['display_num'])
+        print(display_num)
+        bitdepth = int(request.form['bitdepth'])
+        print(bitdepth)
+        wav_design_um = float(request.form['wav_design_um'])
+        print(wav_design_um)
+        wav_um = float(request.form['wav_um'])
+        print(wav_um)
+
+        setup_slm_settings['display_num'] = display_num
+        setup_slm_settings['bitdepth'] = bitdepth
+        setup_slm_settings['wav_design_um'] = wav_design_um
+        setup_slm_settings['wav_um'] = wav_um
         
-        elif slm_type == "hamamatsu":
-            
-            display_num = int(request.form['display_num'])
-            print(display_num)
-            bitdepth = int(request.form['bitdepth'])
-            print(bitdepth)
-            wav_design_um = float(request.form['wav_design_um'])
-            print(wav_design_um)
-            wav_um = float(request.form['wav_um'])
-            print(wav_um) 
-            
-            slm = ScreenMirrored(display_num, bitdepth, wav_design_um=wav_design_um, wav_um=wav_um)
+        create_flag.set()
+        return redirect(url_for('setup_slm'))
 
-            slm_settings['display_num'] = display_num
-            slm_settings['bitdepth'] = bitdepth
-            slm_settings['wav_design_um'] = wav_design_um
-            slm_settings['wav_um'] = wav_um
-        else:
-            print("SLM type not recognized")
+    return render_template('setup_slm.html')
 
+# Function that creates the slm
+def create_slm(dt):
+    global setup_slm_settings, slm_list
+
+    if create_flag.is_set():
+
+        slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                                setup_slm_settings['bitdepth'], 
+                                wav_design_um=setup_slm_settings['wav_design_um'], 
+                                wav_um=setup_slm_settings['wav_um'])
+
+        iface = Interface.SLMSuiteInterface()
         phase_mgr = PhaseManager.PhaseManager(slm)
         wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
         iface.set_SLM(wrapped_slm)
+        iface.set_camera()
 
-        slm_settings['slm_type'] = slm_type
+        setup_slm_settings['iface'] = iface
+        setup_slm_settings['phase_mgr'] = phase_mgr
+
+        slm_list.append(setup_slm_settings)
+
+        create_flag.clear()
+
+@app.route('/setup_virtual', methods=['POST'])
+def setup_virtual():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        iface = Interface.SLMSuiteInterface()
+        slm = iface.set_SLM()
+        phase_mgr = PhaseManager.PhaseManager(slm)
+        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+        iface.set_SLM(wrapped_slm)
+        iface.set_camera()
+
+        current_slm_settings['display_num'] = 'virtual'
+        current_slm_settings['iface'] = iface
+        current_slm_settings['phase_mgr'] = phase_mgr
+
+        return redirect(url_for('dashboard'))
+             
+    return redirect(url_for('dashboard'))
+     
+@app.route('/', methods=['GET', 'POST'])
+def dashboard():
+    global current_slm_settings
+    if current_slm_settings:
+        current_phase_info = get_current_phase_info()
+        phase_mgr = current_slm_settings['phase_mgr']
+        if not current_slm_settings['display_num'] == 'virtual':
+            get_screenshot()
+    else:
+        current_phase_info = None, None, None
+        phase_mgr = None
+    return render_template('dashboard.html', current_phase_info=current_phase_info, 
+                           current_slm_settings=current_slm_settings,
+                           phase_mgr=phase_mgr)
+
+# Flag to control updating the projection on the slm
+project_flag = threading.Event()
+
+@app.route('/select_slm', methods=['POST'])
+def select_slm():
+    global current_slm_settings, slm_list, slm_num
+
+    if request.method == 'POST':
+
+        for slm_dict in slm_list:
+            if slm_dict['display_num'] == slm_num:
+                slm_dict = current_slm_settings
+
+        slm_num = int(request.form['slm_num'])
+
+        for slm_dict in slm_list:
+            if slm_dict['display_num'] == slm_num:
+                current_slm_settings = slm_dict
+                return redirect(url_for('dashboard'))
+                
+    return redirect(url_for('dashboard'))
+
+@app.route('/project', methods=['POST'])
+def project():
+    global project_flag
+
+    if request.method == 'POST':
+        project_flag.set()
+
+    return redirect(url_for('dashboard'))
+
+def update_slm(dt):
+    global current_slm_settings
+    if current_slm_settings:
+        if project_flag.is_set():
+            iface = current_slm_settings['iface']
+            phase_mgr = current_slm_settings['phase_mgr']
+            # Project pattern onto slm
+            iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+            # Clear the flag
+            project_flag.clear()
+
+def get_current_phase_info():
+    global current_slm_settings
+
+    phase_mgr = current_slm_settings['phase_mgr']
+    # Get the file path of the base pattern
+    base_str = phase_mgr.base_source
+
+    # String for additional phase patterns
+    add_str = ""
+    # Log of all additional phase patterns
+    log = phase_mgr.add_log
+    # Iterate over additional phase patterns and add to string
+    for item in log:
+        add_str = add_str + str(item[0]) + ":" + str(item[1]) + ","
+
+    # Get the aperture
+    aperture = phase_mgr.aperture
+    aperture_str = str(aperture)
+
+    return base_str, add_str, aperture_str
+
+def get_screenshot():
+    global current_slm_settings
+    
+    #TODO figure out if I can use pyglet instead
+    displays = screeninfo.get_monitors()
+    display = displays[current_slm_settings['display_num']]
+    # Create area for screenshot
+    display_rect = {
+        "top": display.y,
+        "left": display.x,
+        "width": display.width,
+        "height": display.height
+    }
+    output = "static/images/slm_screenshot.png"
+
+    # Take screenshot
+    sct = mss.mss()
+    screenshot = sct.grab(display_rect)
+
+    # Save to the picture file
+    mss.tools.to_png(screenshot.rgb, screenshot.size, output=output)
+    print(output)
+
+@app.route('/display_targets')
+def display_targets():
+    global current_slm_settings
+    phase_mgr = current_slm_settings['phase_mgr']
+    targets = utils.get_target_from_file(phase_mgr.base_source)
+    x_coords = targets[0].tolist()
+    y_coords = targets[1].tolist()
+    
+    return jsonify({'x': x_coords, 'y': y_coords})
+
+@app.route('/base_pattern', methods=['GET', 'POST'])
+def base_pattern():
+
+    return render_template('base_pattern.html', base_load_history = base_load_history, 
+                           pattern_path=pattern_path,
+                           computational_space=computational_space,
+                           n_iterations=n_iterations)
+
+@app.route('/calculate', methods=['GET', 'POST'])
+def calculate():
+    global n_iterations, computational_space, pattern_path, current_slm_settings
+
+    if request.method == 'POST':
+
+        # Get list of target x and y coordinates input by user
+        x_coords = request.form.getlist('x_coords')
+        y_coords = request.form.getlist('y_coords')
+        # Convert coordinates to integers
+        x_coords = list(map(int, x_coords))
+        y_coords = list(map(int, y_coords))
+        # Create 2D numpy array containing x,y coords
+        targets = np.array([x_coords, y_coords])
+
+        # Get list of target amplitudes
+        amplitudes = request.form.getlist('amplitudes')
+        # Convert amplitudes to floats
+        amplitudes = list(map(float, amplitudes))
+        # Create 1D numpy array containing amplitudes
+        amp_data = np.array(amplitudes)
         
-        print("SLM setup succesful") 
-        return redirect(url_for('setup_slm'))
+        # Get number of iterations from user
+        iteration_number = request.form['iteration_number']
+        # If user specified nothing, set to default
+        if not iteration_number:
+            iteration_number = n_iterations
+        
+        # Initialize guess phase
+        guess_phase = None
+        # Get initial guess file path from user
+        guess_path = request.form['guess_path']
+        # If there is a guess file path
+        if guess_path:
+            # Add the pattern folder path
+            guess_path = add_pattern_path(guess_path)
+            # Extract guess phase pattern
+            _,data = utils.load_slm_calculation(guess_path, 1, 1)
+            # Check if data was in the file
+            if "raw_slm_phase" in data:
+                # Store guess phase pattern
+                guess_phase = data["raw_slm_phase"]
+                print("Stored initial guess phase pattern")
+            else:
+                print ("Cannot initiate the guess phase, since it was not saved")
 
-    return render_template('setup_slm.html', slm_settings=slm_settings)
+        iface = current_slm_settings['iface']
+        # Calculate the base pattern to create the target using GS or WGS algo 
+        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
+
+        # Plot stuff about the calculation, does not work at the moment
+        # TODO: change the interface code not to plot them, save as image and render on html page
+        #TODO: ask why these are passed with no args
+        iface.plot_slmplane()
+        iface.plot_farfield()
+        iface.plot_stats()
+
+        save_path = request.form['save_path']
+        save_name = request.form['save_name']
+        pattern_path = save_calculation(save_path, save_name)
+        load_base(pattern_path)
+
+        return redirect(url_for('calculate'))
+    
+    return render_template('calculate.html')
+
+@app.route('/calculate_grid', methods=['GET', 'POST'])
+def calculate_grid():
+    global n_iterations, computational_space, pattern_path, current_slm_settings
+
+    if request.method == 'POST':
+        # Get JSON data from the user
+        data = request.get_json()
+        print(data)
+        # Extract xCoords and yCoords from the JSON data
+        x_coords = data['xCoords']
+        y_coords = data['yCoords']
+        # Convert to integers
+        x_coords = list(map(int, x_coords))
+        y_coords = list(map(int, y_coords))
+        # Create 2D numpy array containing target x,y coords
+        targets = np.array([x_coords, y_coords])
+        # Scale up to computational space
+        scaling_factor = computational_space[0] / 64
+        targets = targets * scaling_factor
+        print(targets)
+
+        # Get the number of target points
+        num_points = len(x_coords)
+        # Create a 1D numpy array of 1s for target amplitudes
+        #TODO: find a way for the user to specify non-uniform amplitudes
+        amp_data = np.ones(num_points, float)
+
+        # Get number of iterations from user
+        iteration_number = data['iteration_number']
+        # If user specified nothing, set to default
+        if not iteration_number:
+            iteration_number = n_iterations
+
+        # Initialize guess phase
+        guess_phase = None
+        # Get initial guess file path from user
+        guess_path = data['guess_path']
+        # If there is a guess file path
+        if guess_path:
+            # Add the pattern folder path
+            guess_path = add_pattern_path(guess_path)
+            # Extract guess phase pattern
+            _,data = utils.load_slm_calculation(guess_path, 1, 1)
+            # Check if data was in the file
+            if "raw_slm_phase" in data:
+                # Store guess phase pattern
+                guess_phase = data["raw_slm_phase"]
+                print("Stored initial guess phase pattern")
+            else:
+                print ("Cannot initiate the guess phase, since it was not saved")
+        
+        iface = current_slm_settings['iface']
+        # Calculate the base pattern to create the target using GS or WGS algo 
+        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
+
+        # Plot stuff about the calculation, does not work at the moment
+        # TODO: change the interface code not to plot them, save as image and render on html page
+        iface.plot_slmplane()
+        iface.plot_farfield()
+        iface.plot_stats()
+        
+        save_path = str(data['save_path'])
+        save_name = str(data['save_name'])
+        pattern_path = save_calculation(save_path, save_name)
+        load_base(pattern_path)
+
+        # Response to validate
+        result = {'numPoints': num_points, 'xCoords': x_coords, 'yCoords': y_coords}
+        print(result)
+        return jsonify(result)
+    
+    return render_template('calculate_grid.html')
+
+def save_calculation(save_path, save_name):
+    global pattern_path, current_slm_settings
+
+    # Add pattern path if its not an absolute path
+    save_path = add_pattern_path(save_path)
+    print(save_path)
+
+    # Dictionary to store save options
+    save_options = dict()
+    save_options["config"] = True # This option saves the configuration of this run of the algorithm
+    save_options["slm_pattern"] = True # This option saves the slm phase pattern and amplitude pattern (the amplitude pattern is not calculated. So far, the above have assumed a constant amplitude and we have not described functionality to change this)
+    save_options["ff_pattern"] = True # This option saves the far field amplitude pattern
+    save_options["target"] = True # This option saves the desired target
+    save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
+    save_options["name"] = save_name # This name will be used in the path.
+    save_options["crop"] = True # This option crops the slm pattern to the slm, instead of an array the shape of the computational space size.
+
+    iface = current_slm_settings['iface']
+    # Save the calculated pattern to a new file
+    config_path, new_pattern_path, err = iface.save_calculation(save_options)
+    print(config_path)
+    print(new_pattern_path)
+    print(err)
+    return new_pattern_path[:-9]
+
+@app.route('/use_pattern', methods=['GET', 'POST'])
+def use_pattern():
+    global base_load_history, current_slm_settings, pattern_path, computational_space, n_iterations
+
+    if request.method == 'POST':
+
+        # Get the file name input by the user
+        file = request.files['fname']
+        fname = file.filename[:-9]
+        print("Received " + fname)
+
+        # Add the pattern path (if it is just a file name)
+        fname = add_pattern_path(fname)
+
+        load_base(fname)
+
+        return redirect(url_for('use_pattern'))
+    
+    return render_template('use_pattern.html')
+
+def load_base(fname):
+    # Get the phase pattern from the file
+        _,data = utils.load_slm_calculation(fname, 0, 1)
+        phase = data["slm_phase"]
+
+        phase_mgr = current_slm_settings['phase_mgr']
+        # Set the phase pattern as the base of the phase manager
+        phase_mgr.set_base(phase, fname)
+        print("Pattern added succesfully")
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        base_load_history.append({'fname': fname, 'upload_time': upload_time})
+
+@app.route('/reset_pattern', methods=['GET', 'POST'])
+def reset_pattern():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Reset the base phase pattern
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.reset_base()
+        print("Sucesfully Reset Base Pattern")
+
+        return redirect(url_for('base_pattern'))
+
+    return redirect(url_for('base_pattern'))
+
+@app.route('/additional_pattern', methods=['GET', 'POST'])
+def additional_pattern():
+
+    return render_template('additional_pattern.html')
+
+@app.route('/input_additional', methods=['GET', 'POST'])
+def input_additional():
+
+    return render_template('input_additional.html')
+
+@app.route('/add_fresnel_lens', methods=['POST'])
+def add_fresnel_lens():
+    global current_slm_settings
+    if request.method == 'POST':
+        #TODO: two focal lengths
+
+        # Got focal length from user
+        focal_length = float(request.form['focal_length'])
+        # Store focal length in a 1D numpy array
+        focal_length = np.array([focal_length])
+
+        # Add the fresnel lens
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_fresnel_lens(focal_length[0])
+        print("Added fresnel lens")
+
+        return redirect(url_for('input_additional'))
+    
+    return redirect(url_for('input_additional'))
+
+@app.route('/add_offset', methods=['POST'])
+def add_offset():
+    global current_slm_settings
+
+    if request.method =='POST':
+        # Get x,y coordinates for the offset
+        offset_x = float(request.form['offset_x'])
+        offset_y = float(request.form['offset_y'])
+        # Store offset coords in a 1D numpy array
+        offset = np.array([offset_x, offset_y])
+
+        # Add the offset
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_offset(offset)
+
+        return redirect(url_for('input_additional'))
+    
+    return redirect(url_for('input_additional'))
+
+@app.route('/add_zernike_poly', methods=['POST'])
+def add_zernike_poly():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Get the number of zernikes in the sum
+        npolys = (len(request.form)) // 3
+
+        # Initialize list of zernikes
+        poly_list = []
+
+        # Loop over zernikes and append to the list
+        for i in range(npolys):
+            n = int(request.form.get(f'n{i}'))
+            m = int(request.form.get(f'm{i}'))
+            weight = float(request.form.get(f'weight{i}'))
+            poly_list.append(((n, m), weight))
+
+        # Add the sum of zernikes
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_zernike_poly(poly_list)
+        print("Added Zernike")
+
+        return redirect(url_for('input_additional'))
+    
+    return redirect(url_for('input_additional'))
+
+@app.route('/use_aperture', methods=['POST'])
+def use_aperture():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Get the aperture size from the user
+        aperture_size = float(request.form['aperture_size'])
+        # Store twice in a 1D numpy array
+        #TODO: why twice, should the user be able to pass a second aperture size?
+        aperture = np.array([aperture_size, aperture_size])
+
+        # Set the aperture
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.set_aperture(aperture)
+
+        return redirect(url_for('input_additional'))
+    
+    return redirect(url_for('input_additional'))     
+
+@app.route('/save_add_phase', methods=['GET', 'POST'])
+def save_add_phase():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Get the file path from user
+        save_path = request.form['save_path']
+        # Get the file name from user
+        save_name = request.form['save_name']
+        # Add pattern path if its not an absolute path
+        save_path = add_pattern_path(save_path)
+        
+        # Dictionary containing save options
+        save_options = dict()
+        save_options["config"] = True # This option saves the information about how this additional phase was created
+        save_options["phase"] = True # saves the actual phase
+        save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
+        save_options["name"] = save_name # This name will be used in the path.
+
+        # Save additional phase pattern to new file
+        phase_mgr = current_slm_settings['phase_mgr']
+        config_path, new_pattern_path = phase_mgr.save_to_file(save_options)
+        print(config_path)
+        print(new_pattern_path)
+
+        return redirect(url_for('save_add_phase'))
+    
+    return render_template('save_add_phase.html')
+
+@app.route('/use_add_phase', methods=['GET', 'POST'])
+def use_add_phase():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Get file name input by user
+        file = request.files['fname']
+        fname = file.filename[:-19]
+        print("Received for add phase: " + fname)
+
+        # Add pattern path if its just a file name
+        fname = add_pattern_path(fname)
+
+        # Add additional phase pattern to phase manager
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_from_file(fname)
+        print("Additional phase added succesfully")
+
+        return redirect(url_for('use_add_phase'))
+    
+    return render_template('use_add_phase.html')
+
+@app.route('/add_pattern_to_add_phase', methods=['POST'])
+def add_pattern_to_add_phase():
+    global current_slm_settings
+
+    if request.method == 'POST':
+
+        # Get file path for additional phase from user
+        file = request.files['path']
+        path = file.filename[:-19]
+        print("Received " + path)
+
+        # Add pattern path if its not global
+        path = add_pattern_path(path)
+
+        # Add the additional phase pattern
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_pattern_to_additional(path)
+
+        return redirect(url_for('use_add_phase'))
+    
+    return redirect(url_for('use_add_phase'))
+
+@app.route('/reset_additional_phase', methods=['POST'])
+def reset_additional_phase():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Reset the additional phase pattern
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.reset_additional()
+        print("Sucesfully Reset Additional Phase")
+
+        return redirect(url_for('additional_pattern'))
+
+    return redirect(url_for('additional_pattern'))
+
+@app.route('/reset_aperture', methods=['POST'])
+def reset_aperture():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Reset the aperture
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.reset_aperture()
+        print("Aperture Reset")
+
+        return redirect(url_for('additional_pattern'))
+    
+    return redirect(url_for('additional_pattern'))
+
+if __name__ == '__main__':
+    threading.Thread(target=app.run, kwargs={'debug':False}, daemon=True).start()
+    start_pyglet_app()
+
+
+
+
+
+
+
+
+
+#TODO: ask to see a correction file
+"""
+@app.route('/use_correction', methods=['GET', 'POST'])
+def use_correction():
+    global current_slm_settings
+
+    if request.method == 'POST':
+        # Get correction file name from user
+        file = request.files['fname']
+        fname = file.filename
+        print("Received correction pattern: " + fname)
+
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_correction(fname, current_slm_settings['bitdepth'], 1)
+
+    
+        # Check if connected to hardware
+        if  slm_settings['slm_type'] == "hamamatsu":
+            # Add correction phase pattern
+            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1)
+        else:
+            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1) #TODO, in case you need to scale.
+            #TODO: ask what this is for?
+
+
+        return redirect(url_for('use_correction'))
+    
+    return render_template('use_correction.html')
 """
 
 """
@@ -211,61 +759,6 @@ def setup_camera():
     return render_template('setup_camera.html', camera_settings=camera_settings)
 """
 
-@app.route('/use_pattern', methods=['GET', 'POST'])
-def use_pattern():
-    global phase_mgr, base_load_history
-
-    if request.method == 'POST':
-
-        # Get the file name input by the user
-        fname = request.form['fname']
-        print("Received " + fname)
-
-        # Add the pattern path (if it is just a file name)
-        fname = add_pattern_path(fname)
-
-        # Get the phase pattern from the file
-        _,data = utils.load_slm_calculation(fname, 0, 1)
-        phase = data["slm_phase"]
-
-        # Set the phase pattern as the base of the phase manager
-        phase_mgr.set_base(phase, fname)
-        print("Pattern added succesfully")
-
-        # Get the time the file was uploaded
-        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Add the file name and upload time to the history
-        base_load_history.append({'fname': fname, 'upload_time': upload_time})
-
-        return redirect(url_for('use_pattern'))
-    
-    return render_template('use_pattern.html', base_load_history = base_load_history)
-
-@app.route('/use_add_phase', methods=['GET', 'POST'])
-def use_add_phase():
-    global pattern_path, phase_mgr, add_load_history
-
-    if request.method == 'POST':
-        # Get file name input by user
-        fname = request.form['fname']
-        print("Received for add phase: " + fname)
-
-        # Add pattern path if its just a file name
-        fname = add_pattern_path(fname)
-
-        # Add additional phase pattern to phase manager
-        phase_mgr.add_from_file(fname)
-        print("Additional phase added succesfully")
-
-        # Get the time file was uploaded
-        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Add file name and upload time to history
-        add_load_history.append({'fname': fname, 'upload_time': upload_time})
-
-        return redirect(url_for('use_add_phase'))
-    
-    return render_template('use_add_phase.html', add_load_history = add_load_history)
-
 #TODO: ask what this does?
 """
 @app.route('/init_hologram', methods=['GET', 'POST'])
@@ -286,334 +779,6 @@ def init_hologram():
     
     return render_template('init_hologram.html')
 """
-
-@app.route('/calculate', methods=['GET', 'POST'])
-def calculate():
-    global n_iterations, iface, computational_space, pattern_path
-
-    if request.method == 'POST':
-
-        # Get list of target x and y coordinates input by user
-        x_coords = request.form.getlist('x_coords')
-        y_coords = request.form.getlist('y_coords')
-        # Convert coordinates to integers
-        x_coords = list(map(int, x_coords))
-        y_coords = list(map(int, y_coords))
-        # Create 2D numpy array containing x,y coords
-        targets = np.array([x_coords, y_coords])
-
-        # Get list of target amplitudes
-        amplitudes = request.form.getlist('amplitudes')
-        # Convert amplitudes to floats
-        amplitudes = list(map(float, amplitudes))
-        # Create 1D numpy array containing amplitudes
-        amp_data = np.array(amplitudes)
-        
-        # Get number of iterations from user
-        iteration_number = request.form['iteration_number']
-        # If user specified nothing, set to default
-        if not iteration_number:
-            iteration_number = n_iterations
-        
-        # Initialize guess phase
-        guess_phase = None
-        # Get initial guess file path from user
-        guess_path = request.form['guess_path']
-        # If there is a guess file path
-        if guess_path:
-            # Add the pattern folder path
-            add_pattern_path(guess_path)
-            # Extract guess phase pattern
-            _,data = utils.load_slm_calculation(guess_path, 1, 1)
-            # Check if data was in the file
-            if "raw_slm_phase" in data:
-                # Store guess phase pattern
-                guess_phase = data["raw_slm_phase"]
-                print("Stored initial guess phase pattern")
-            else:
-                print ("Cannot initiate the guess phase, since it was not saved")
-
-        # Calculate the base pattern to create the target using GS or WGS algo 
-        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
-
-        # Plot stuff about the calculation, does not work at the moment
-        # TODO: change the interface code not to plot them, save as image and render on html page
-        iface.plot_slmplane()
-        iface.plot_farfield()
-        iface.plot_stats()
-
-        return redirect(url_for('calculate'))
-    
-    return render_template('calculate.html')
-
-
-@app.route('/calculate_grid', methods=['GET', 'POST'])
-def calculate_grid():
-    global n_iterations, iface, computational_space, pattern_path
-
-    if request.method == 'POST':
-        # Get JSON data from the user
-        data = request.get_json()
-        # Extract xCoords and yCoords from the JSON data
-        x_coords = data['xCoords']
-        y_coords = data['yCoords']
-        # Convert to integers
-        x_coords = list(map(int, x_coords))
-        y_coords = list(map(int, y_coords))
-        # Create 2D numpy array containing target x,y coords
-        targets = np.array([x_coords, y_coords])
-        # TODO: scale up to 2048x2048
-
-
-        # Get the number of target points
-        num_points = len(x_coords)
-        # Create a 1D numpy array of 1s for target amplitudes
-        #TODO: find a way for the user to specify non-uniform amplitudes
-        amp_data = np.ones(num_points, float)
-
-        # Get number of iterations from user
-        iteration_number = request.form['iteration_number']
-        # If user specified nothing, set to default
-        if not iteration_number:
-            iteration_number = n_iterations
-
-        # Initialize guess phase
-        guess_phase = None
-        # Get initial guess file path from user
-        guess_path = request.form['guess_path']
-        # If there is a guess file path
-        if guess_path:
-            # Add the pattern folder path
-            add_pattern_path(guess_path)
-            # Extract guess phase pattern
-            _,data = utils.load_slm_calculation(guess_path, 1, 1)
-            # Check if data was in the file
-            if "raw_slm_phase" in data:
-                # Store guess phase pattern
-                guess_phase = data["raw_slm_phase"]
-                print("Stored initial guess phase pattern")
-            else:
-                print ("Cannot initiate the guess phase, since it was not saved")
-        
-        # Calculate the base pattern to create the target using GS or WGS algo 
-        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
-
-        # Plot stuff about the calculation, does not work at the moment
-        # TODO: change the interface code not to plot them, save as image and render on html page
-        iface.plot_slmplane()
-        iface.plot_farfield()
-        iface.plot_stats()
-        
-        # Response to validate
-        result = {'numPoints': num_points, 'xCoords': x_coords, 'yCoords': y_coords}
-        print(result)
-        return jsonify(result)
-    
-    return render_template('calculate_grid.html')
-
-
-@app.route('/save_calculation', methods=['GET', 'POST'])
-def save_calculation():
-    global pattern_path, iface, base_save_history
-
-    if request.method == 'POST':
-        # Get the file path from user
-        save_path = request.form['save_path']
-        # Get the file name from user
-        save_name = request.form['save_name']
-        # Add pattern path if its not an absolute path
-        add_pattern_path(save_path)
-        print(save_path)
-
-        # Dictionary to store save options
-        save_options = dict()
-        save_options["config"] = True # This option saves the configuration of this run of the algorithm
-        save_options["slm_pattern"] = True # This option saves the slm phase pattern and amplitude pattern (the amplitude pattern is not calculated. So far, the above have assumed a constant amplitude and we have not described functionality to change this)
-        save_options["ff_pattern"] = True # This option saves the far field amplitude pattern
-        save_options["target"] = True # This option saves the desired target
-        save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
-        save_options["name"] = save_name # This name will be used in the path.
-        save_options["crop"] = True # This option crops the slm pattern to the slm, instead of an array the shape of the computational space size.
-
-        # Save the calculated pattern to a new file
-        config_path, new_pattern_path, err = iface.save_calculation(save_options)
-        print(config_path)
-        print(new_pattern_path)
-        print(err)
-
-        # Get the time that the file was saved
-        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Display file path, name and time saved in history
-        base_save_history.append({'save_path': save_path, 'save_name': save_name, 'upload_time': upload_time})
-
-        return redirect(url_for('save_calculation'))
-
-    return render_template('save_calculation.html', base_save_history=base_save_history)
-
-@app.route('/save_add_phase', methods=['GET', 'POST'])
-def save_add_phase():
-    global pattern_path, phase_mgr, add_save_history
-
-    if request.method == 'POST':
-        # Get the file path from user
-        save_path = request.form['save_path']
-        # Get the file name from user
-        save_name = request.form['save_name']
-        # Add pattern path if its not an absolute path
-        add_pattern_path(save_path)
-        
-        # Dictionary containing save options
-        save_options = dict()
-        save_options["config"] = True # This option saves the information about how this additional phase was created
-        save_options["phase"] = True # saves the actual phase
-        save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
-        save_options["name"] = save_name # This name will be used in the path.
-
-        # Save additional phase pattern to new file
-        config_path, new_pattern_path = phase_mgr.save_to_file(save_options)
-        print(config_path)
-        print(new_pattern_path)
-
-        # Get the time that the file was saved
-        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Display file path, name and time saved in history
-        add_save_history.append({'save_path': save_path, 'save_name': save_name, 'upload_time': upload_time})
-
-        return redirect(url_for('save_add_phase'))
-
-    return render_template('save_add_phase.html', add_save_history=add_save_history)
-
-@app.route('/use_correction', methods=['GET', 'POST'])
-def use_correction():
-    global pattern_path, phase_mgr, slm_settings
-
-    if request.method == 'POST':
-        # Get correction file name from user
-        fname = request.form['fname']
-        print("Received correction pattern: " + fname)
-
-        # Check if connected to hardware
-        if  slm_settings['slm_type'] == "hamamatsu":
-            # Add correction phase pattern
-            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1)
-        else:
-            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1) #TODO, in case you need to scale.
-            #TODO: ask what this is for?
-
-        return redirect(url_for('use_correction'))
-    
-    return render_template('use_correction.html')
-
-
-@app.route('/add_pattern_to_add_phase', methods=['GET', 'POST'])
-def add_pattern_to_add_phase():
-    global pattern_path, phase_mgr
-
-    if request.method == 'POST':
-        # Get file path for additional phase from user
-        path = request.form['path']
-        print("Received " + path)
-
-        # Add pattern path if its not global
-        add_pattern_path(path)
-
-        # Add the additional phase pattern
-        phase_mgr.add_pattern_to_additional(path)
-
-        return redirect(url_for('add_pattern_to_add_phase'))
-    
-    return render_template('add_pattern_to_add_phase.html')
-
-@app.route('/add_fresnel_lens', methods=['GET', 'POST'])
-def add_fresnel_lens():
-    global phase_mgr
-
-    if request.method == 'POST':
-        #TODO: two focal lengths
-
-        # Got focal length from user
-        focal_length = float(request.form['focal_length'])
-        # Store focal length in a 1D numpy array
-        focal_length = np.array([focal_length])
-
-        # Add the fresnel lens
-        phase_mgr.add_fresnel_lens(focal_length[0])
-        print("Added fresnel lens")
-
-        return redirect(url_for('add_fresnel_lens'))
-    
-    return render_template('add_fresnel_lens.html')
-
-@app.route('/add_offset', methods=['GET', 'POST'])
-def add_offset():
-    global phase_mgr
-
-    if request.method =='POST':
-        # Get x,y coordinates for the offset
-        offset_x = float(request.form['offset_x'])
-        offset_y = float(request.form['offset_y'])
-        # Store offset coords in a 1D numpy array
-        offset = np.array([offset_x, offset_y])
-
-        # Add the offset
-        phase_mgr.add_offset(offset)
-
-        return redirect(url_for('add_offset'))
-    
-    return render_template('add_offset.html')
-
-@app.route('/add_zernike_poly', methods=['GET', 'POST'])
-def add_zernike_poly():
-    global phase_mgr
-
-    if request.method == 'POST':
-        # Get the number of zernikes in the sum
-        npolys = (len(request.form)) // 3
-
-        # Initialize list of zernikes
-        poly_list = []
-
-        # Loop over zernikes and append to the list
-        for i in range(npolys):
-            n = int(request.form.get(f'n{i}'))
-            m = int(request.form.get(f'm{i}'))
-            weight = float(request.form.get(f'weight{i}'))
-            poly_list.append(((n, m), weight))
-
-        # Add the sum of zernikes
-        phase_mgr.add_zernike_poly(poly_list)
-        print("Added Zernike")
-
-        return redirect(url_for('add_zernike_poly'))
-    
-    return render_template('add_zernike_poly.html')
-
-@app.route('/reset_additional_phase', methods=['GET', 'POST'])
-def reset_additional_phase():
-    global phase_mgr
-
-    if request.method == 'POST':
-        # Reset the additional phase pattern
-        phase_mgr.reset_additional()
-        print("Sucesfully Reset Additional Phase")
-
-        return redirect(url_for('reset_additional_phase'))
-
-    return render_template('reset_additional_phase.html')
-
-@app.route('/reset_pattern', methods=['GET', 'POST'])
-def reset_pattern():
-    global phase_mgr
-
-    if request.method == 'POST':
-        # Reset the base phase pattern
-        phase_mgr.reset_base()
-        print("Sucesfully Reset Base Pattern")
-
-        return redirect(url_for('reset_pattern'))
-
-    return render_template('reset_pattern.html')
-
 #TODO: ask how this should be used
 """
 @app.route('/use_slm_amp', methods=['GET', 'POST'])
@@ -643,78 +808,6 @@ def use_slm_amp():
     
     return render_template('use_slm_amp.html')
 """
-
-@app.route('/use_aperture', methods=['GET', 'POST'])
-def use_aperture():
-    global phase_mgr
-
-    if request.method == 'POST':
-        # Get the aperture size from the user
-        aperture_size = float(request.form['aperture_size'])
-        # Store twice in a 1D numpy array
-        #TODO: why twice, should the user be able to pass a second aperture size?
-        aperture = np.array([aperture_size, aperture_size])
-
-        # Set the aperture
-        phase_mgr.set_aperture(aperture)
-
-        return redirect(url_for('use_aperture'))
-    
-    return render_template('use_aperture.html')
-
-@app.route('/reset_aperture', methods=['GET', 'POST'])
-def reset_aperture():
-    global phase_mgr
-
-    if request.method == 'POST':
-        # Reset the aperture
-        phase_mgr.reset_aperture()
-        print("Aperture Reset")
-
-        return redirect(url_for('reset_aperture'))
-    
-    return render_template('reset_aperture.html')
-
-@app.route('/project', methods=['GET', 'POST'])
-def project():
-    global update_flag
-
-    if request.method == 'POST':
-        # Set the update flag, starts the update_slm function to project pattern
-        update_flag.set()
-        print("Projected to SLM")
-
-        return redirect(url_for('project'))
-    
-    return render_template('project.html')
-
-@app.route('/get_current_phase_info', methods=['GET', 'POST'])
-def get_current_phase_info():
-    global phase_mgr, current_phase_info
-
-    if request.method == 'POST':
-        # Get the file path of the base pattern
-        base_str = "base: " + phase_mgr.base_source
-
-        # String for additional phase patterns
-        add_str = " additional: "
-        # Log of all additional phase patterns
-        log = phase_mgr.add_log
-        # Iterate over additional phase patterns and add to string
-        for item in log:
-            add_str = add_str + str(item[0]) + ":" + str(item[1]) + ","
-
-        # Get the aperture
-        aperture = phase_mgr.aperture
-        aperture_str = " aperture: " + str(aperture)
-
-        # Add together base, additional and aperture to give string of current phase info
-        current_phase_info = base_str + add_str + aperture_str
-        print(current_phase_info)
-
-        return redirect(url_for('get_current_phase_info'))
-    
-    return render_template('get_current_phase_info.html', current_phase_info=current_phase_info)
 
 #TODO: do we need to be able to get just the base or just the additional phase, or is just
 # the current phase info enough?
@@ -901,31 +994,7 @@ def get_displays():
     
     return render_template('get_displays.html')
 """
-
-"""
-@app.route('/get_screenshot', methods=['GET', 'POST'])
-def get_screenshot():
-    global slm_settings
-    global displays
-
-    if request.method == 'POST':
-        display = displays[slm_settings['display_num']]
-        # Create area for screenshot
-        display_rect = {
-            "top": display.y,
-            "left": display.x,
-            "width": display.width,
-            "height": display.height
-        }
-        # Take screenshot
-        sct = mss.mss()
-        screenshot = sct.grab(display_rect)
-        # Do something with the screenshot
-        return redirect(url_for('get_screenshot'))
     
-    return render_template('get_screenshot.html')
-"""
-
 """
 @app.route('/calculate_square_array', methods=['GET', 'POST'])
 def calculate_square_array():
@@ -1027,7 +1096,3 @@ def calculate_square_array2():
     
     return render_template('calculate_square_array2.html')
 """
-
-if __name__ == '__main__':
-    threading.Thread(target=app.run, kwargs={'debug':False}, daemon=True).start()
-    create_slm()

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Setup - SLM Assistant{% endblock %}
+
+{% block content %}
+    <h1>Setup</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+            <li><a href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        </ul>
+    </nav>
+    {% block setup %}{% endblock %}
+
+{% endblock %}

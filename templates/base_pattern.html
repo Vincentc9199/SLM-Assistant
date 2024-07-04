@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Base Pattern - SLM Assistant{% endblock %}
+
+{% block content %}
+    <h1>Base Pattern</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('calculate') }}">Calculate: Input Coordinates</a></li>
+            <li><a href="{{ url_for('calculate_grid') }}">Calculate: Grid</a></li>
+            <li><a href="{{ url_for('use_pattern') }}">Load from File</a></li>
+        </ul>
+    </nav>
+
+    <h2>Current Calculation Settings</h2>
+    <table>
+        <tr>
+            <th>Pattern File Path</th>
+            <th>Computational Space</th>
+            <th>Number of Iterations</th>
+        </tr>
+        <tr>
+            <td>{{ pattern_path }}</td>
+            <td>{{ computational_space }}</td>
+            <td>{{ n_iterations }}</td>
+        </tr>
+    </table>
+
+    <h2>Reset Base Phase Patterns</h2>
+    <form action="{{ url_for('reset_pattern') }}" method="POST">
+        <input type="submit" value="Reset Base Pattern">
+    </form>
+
+    {% block get_base %}{% endblock %}
+
+    <h2>History of Loaded Base Patterns</h2>
+    {% if base_load_history %}
+        
+        <table>
+            <tr>
+                <th>File Name</th>
+                <th>Date and Time</th>
+            </tr>
+            {% for entry in base_load_history %}
+                <tr>
+                    <td>{{ entry.fname }}</td>
+                    <td>{{ entry.upload_time }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endblock %}

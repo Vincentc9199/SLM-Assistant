@@ -220,7 +220,8 @@ class SLMSuiteInterface:
         """
         if self.hologram is not None:
             if (amp is None) and (phase is None):
-                self.hologram.plot_nearfield()
+                #self.hologram.plot_nearfield()
+                print("Doing this weird thing")
                 return 0
             elif (amp is None) and (phase is not None):
                 amp = self.hologram.amp
@@ -260,7 +261,10 @@ class SLMSuiteInterface:
                 if i==0: ax.set_ylabel("SLM $y$ [pix]")
 
             fig.tight_layout()
+            #fig.savefig('my_plot.png')
+            #plt.close(fig)
             plt.show()
+            print("Ran Plot Function")
             return 0
         else:
             return -1

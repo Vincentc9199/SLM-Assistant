@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Additional Patterns - SLM Assistant{% endblock %}
+
+{% block content %}
+    <h1>Additional Patterns</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('input_additional') }}">Input Additional Patterns</a></li>
+            <li><a href="{{ url_for('save_add_phase') }}">Save Additional Patterns</a></li>
+            <li><a href="{{ url_for('use_add_phase') }}">Load from File</a></li>
+        </ul>
+    </nav>
+
+    <h2>Reset Additional Phase Patterns</h2>
+    <form action="{{ url_for('reset_additional_phase') }}" method="POST">
+        <input type="submit" value="Reset Additional Patterns">
+    </form>
+    
+    <h2>Reset Aperture</h2>
+    <form action="{{ url_for('reset_aperture') }}" method="POST">
+        <input type="submit" value="Reset Aperture">
+    </form>
+
+    {% block get_additional %}{% endblock %}
+
+{% endblock %}

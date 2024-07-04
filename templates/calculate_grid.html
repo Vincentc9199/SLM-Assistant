@@ -1,12 +1,28 @@
-{% extends "base.html" %}
+{% extends "base_pattern.html" %}
 
-{% block title %}Select Points with Fabric.js{% endblock %}
+{% block get_base %}
+<h2>Calculate: Grid</h2>
 
-{% block content %}
-<h2>Select Points with Fabric.js</h2>
-<canvas id="canvas" width="600" height="600"></canvas>
+<div class="input-container">
+    <label for="iteration_number">Number of Iterations:</label>
+    <input type="number" id="iteration_number" name="iteration_number">
+</div>
+<div class="input-container">
+    <label for="guess_path">Initial Guess File Path:</label>
+    <input type="text" id="guess_path" name="guess_path">
+</div>
+<div class="input-container">
+    <label for="save_path">Save File Path:</label>
+    <input type="text" id="save_path" name="save_path">
+</div>
+<div class="input-container">
+    <label for="save_name">Save Name:</label>
+    <input type="text" id="save_name" name="save_name">
+</div>
+    
+<canvas id="canvas" width="960" height="960"></canvas>
 <div class="button-container">
-    <button onclick="submitPoints()">Submit Points</button>
+    <button onclick="submitPoints()">Start Calculation</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
@@ -17,7 +33,7 @@
     var yCoords = [];
 
     // Create grid of pixels
-    var numPixels = 30; // Adjust number of pixels as needed
+    var numPixels = 64; // Adjust number of pixels as needed
     var pixelSize = canvas.width / numPixels;
 
     for (var i = 0; i < numPixels; i++) {
@@ -66,10 +82,20 @@
 
 
 function submitPoints() {
+
+    var iteration_number = document.getElementById('iteration_number').value;
+    var guess_path = document.getElementById('guess_path').value;
+    var save_path = document.getElementById('save_path').value;
+    var save_name = document.getElementById('save_name').value;
+
     // Prepare data to send
     var data = {
             xCoords: xCoords,
-            yCoords: yCoords
+            yCoords: yCoords,
+            iteration_number: iteration_number,
+            guess_path: guess_path,
+            save_path: save_path,
+            save_name: save_name
         };
 
     // Send points to backend via AJAX

@@ -1,52 +1,25 @@
-{% extends "base.html" %}
+{% extends "setup.html" %}
 
-{% block title %}Setup SLM{% endblock %}
-
-{% block content %}
+{% block setup %}
     <h1>Setup SLM</h1>
     <form method="POST">
-        <label for="slm_type">SLM Type:</label>
-        <select id="slm_type" name="slm_type" onchange="showHamamatsuFields(this.value)">
-            <option value="virtual">Virtual</option>
-            <option value="hamamatsu">Hamamatsu</option>
-        </select><br><br>
+        <label for="display_num">Display Number:</label>
+        <input type="number" id="display_num" name="display_num">
 
-        <div id="hamamatsu_fields" style="display:none;">
-            <label for="display_num">Display Number:</label>
-            <input type="number" id="display_num" name="display_num"><br><br>
+        <label for="bitdepth">Bit Depth:</label>
+        <input type="number" id="bitdepth" name="bitdepth">
 
-            <label for="bitdepth">Bit Depth:</label>
-            <input type="number" id="bitdepth" name="bitdepth"><br><br>
+        <label for="wav_design_um">Wave Design (um):</label>
+        <input type="number" id="wav_design_um" name="wav_design_um" step="0.001">
 
-            <label for="wav_design_um">Wave Design (um):</label>
-            <input type="number" id="wav_design_um" name="wav_design_um" step="0.001"><br><br>
-
-            <label for="wav_um">Wave (um):</label>
-            <input type="number" id="wav_um" name="wav_um" step="0.001"><br><br>
-        </div>
-
-        <button type="submit">Submit</button>
+        <label for="wav_um">Wave (um):</label>
+        <input type="number" id="wav_um" name="wav_um" step="0.001">
+        
+        <button type="submit">Submit SLM Setttings</button>
     </form>
 
-    {% if slm_settings %}
-        <h2>Current SLM Settings</h2>
-        <p>SLM Type: {{ slm_settings.slm_type }}</p>
-        {% if slm_type == 'hamamatsu' %}
-            <p>Display Number: {{ slm_settings.display_num }}</p>
-            <p>Bit Depth: {{ slm_settings.bitdepth }}</p>
-            <p>Wave Design (um): {{ slm_settings.wav_design_um }}</p>
-            <p>Wave (um): {{ slm_settings.wav_um }}</p>
-        {% endif %}
-    {% endif %}
-
-    <script>
-        function showHamamatsuFields(slmType) {
-            var hamamatsuFields = document.getElementById('hamamatsu_fields');
-            if (slmType === 'hamamatsu') {
-                hamamatsuFields.style.display = 'block';
-            } else {
-                hamamatsuFields.style.display = 'none';
-            }
-        }
-    </script>
+    <h2>Setup Virtual SLM</h2>
+    <form action="{{ url_for('setup_virtual') }}" method="POST">
+        <button type="submit">Setup Virtual</button>
+    </form>
 {% endblock %}
