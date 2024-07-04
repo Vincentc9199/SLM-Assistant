@@ -121,8 +121,8 @@ def create_slm(dt):
 
         setup_slm_settings['iface'] = iface
         setup_slm_settings['phase_mgr'] = phase_mgr
-
-        slm_list.append(setup_slm_settings)
+        
+        slm_list.append(setup_slm_settings.copy())
 
         create_flag.clear()
      
