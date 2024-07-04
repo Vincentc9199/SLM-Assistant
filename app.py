@@ -169,7 +169,7 @@ def project():
     if request.method == 'POST':
         if slm_num is not None:
             project_flag.set()
-            print(slm_num)
+            print("Projecting from index:" + str(slm_num))
             return redirect(url_for('dashboard'))
         
     return redirect(url_for('dashboard'))
@@ -180,6 +180,7 @@ def update_slm(dt):
     if project_flag.is_set():
         if slm_num is not None:
             current_slm_settings = slm_list[slm_num]
+            print("Projecting from index, step 2:" + str(slm_num))
             iface = current_slm_settings['iface']
             phase_mgr = current_slm_settings['phase_mgr']
             # Project pattern onto slm
