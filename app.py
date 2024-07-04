@@ -51,9 +51,8 @@ computational_space = (2048, 2048)
 n_iterations = 20
 
 slm_list = []
-current_slm_settings = {}
 setup_slm_settings = {}
-slm_num = 1
+slm_num = None
 
 # Flag to control creating an slm
 create_flag = threading.Event()
@@ -126,35 +125,15 @@ def create_slm(dt):
         slm_list.append(setup_slm_settings)
 
         create_flag.clear()
-
-@app.route('/setup_virtual', methods=['POST'])
-def setup_virtual():
-    global current_slm_settings
-
-    if request.method == 'POST':
-        iface = Interface.SLMSuiteInterface()
-        slm = iface.set_SLM()
-        phase_mgr = PhaseManager.PhaseManager(slm)
-        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
-        iface.set_SLM(wrapped_slm)
-        iface.set_camera()
-
-        current_slm_settings['display_num'] = 'virtual'
-        current_slm_settings['iface'] = iface
-        current_slm_settings['phase_mgr'] = phase_mgr
-
-        return redirect(url_for('dashboard'))
-             
-    return redirect(url_for('dashboard'))
      
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
     if current_slm_settings:
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
-        if not current_slm_settings['display_num'] == 'virtual':
-            get_screenshot()
+        get_screenshot()
     else:
         current_phase_info = None, None, None
         phase_mgr = None
@@ -167,20 +146,13 @@ project_flag = threading.Event()
 
 @app.route('/select_slm', methods=['POST'])
 def select_slm():
-    global current_slm_settings, slm_list, slm_num
+    global slm_num
 
     if request.method == 'POST':
 
-        for slm_dict in slm_list:
-            if slm_dict['display_num'] == slm_num:
-                slm_dict = current_slm_settings
-
         slm_num = int(request.form['slm_num'])
 
-        for slm_dict in slm_list:
-            if slm_dict['display_num'] == slm_num:
-                current_slm_settings = slm_dict
-                return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard'))
                 
     return redirect(url_for('dashboard'))
 
@@ -194,7 +166,9 @@ def project():
     return redirect(url_for('dashboard'))
 
 def update_slm(dt):
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
+
     if current_slm_settings:
         if project_flag.is_set():
             iface = current_slm_settings['iface']
@@ -205,7 +179,8 @@ def update_slm(dt):
             project_flag.clear()
 
 def get_current_phase_info():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     phase_mgr = current_slm_settings['phase_mgr']
     # Get the file path of the base pattern
@@ -226,7 +201,8 @@ def get_current_phase_info():
     return base_str, add_str, aperture_str
 
 def get_screenshot():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
     
     #TODO figure out if I can use pyglet instead
     displays = screeninfo.get_monitors()
@@ -250,7 +226,9 @@ def get_screenshot():
 
 @app.route('/display_targets')
 def display_targets():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
+
     phase_mgr = current_slm_settings['phase_mgr']
     targets = utils.get_target_from_file(phase_mgr.base_source)
     x_coords = targets[0].tolist()
@@ -260,6 +238,7 @@ def display_targets():
 
 @app.route('/base_pattern', methods=['GET', 'POST'])
 def base_pattern():
+    global base_load_history,pattern_path, computational_space, n_iterations
 
     return render_template('base_pattern.html', base_load_history = base_load_history, 
                            pattern_path=pattern_path,
@@ -268,7 +247,9 @@ def base_pattern():
 
 @app.route('/calculate', methods=['GET', 'POST'])
 def calculate():
-    global n_iterations, computational_space, pattern_path, current_slm_settings
+    global n_iterations, computational_space, pattern_path
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
 
@@ -334,7 +315,9 @@ def calculate():
 
 @app.route('/calculate_grid', methods=['GET', 'POST'])
 def calculate_grid():
-    global n_iterations, computational_space, pattern_path, current_slm_settings
+    global n_iterations, computational_space, pattern_path
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Get JSON data from the user
@@ -406,7 +389,9 @@ def calculate_grid():
     return render_template('calculate_grid.html')
 
 def save_calculation(save_path, save_name):
-    global pattern_path, current_slm_settings
+    global pattern_path
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     # Add pattern path if its not an absolute path
     save_path = add_pattern_path(save_path)
@@ -432,8 +417,7 @@ def save_calculation(save_path, save_name):
 
 @app.route('/use_pattern', methods=['GET', 'POST'])
 def use_pattern():
-    global base_load_history, current_slm_settings, pattern_path, computational_space, n_iterations
-
+    
     if request.method == 'POST':
 
         # Get the file name input by the user
@@ -451,23 +435,27 @@ def use_pattern():
     return render_template('use_pattern.html')
 
 def load_base(fname):
+    global slm_list, slm_num, base_load_history
+    current_slm_settings = slm_list[slm_num]
+
     # Get the phase pattern from the file
-        _,data = utils.load_slm_calculation(fname, 0, 1)
-        phase = data["slm_phase"]
+    _,data = utils.load_slm_calculation(fname, 0, 1)
+    phase = data["slm_phase"]
 
-        phase_mgr = current_slm_settings['phase_mgr']
-        # Set the phase pattern as the base of the phase manager
-        phase_mgr.set_base(phase, fname)
-        print("Pattern added succesfully")
+    phase_mgr = current_slm_settings['phase_mgr']
+    # Set the phase pattern as the base of the phase manager
+    phase_mgr.set_base(phase, fname)
+    print("Pattern added succesfully")
 
-        # Get the time the file was uploaded
-        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Add the file name and upload time to the history
-        base_load_history.append({'fname': fname, 'upload_time': upload_time})
+    # Get the time the file was uploaded
+    upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Add the file name and upload time to the history
+    base_load_history.append({'fname': fname, 'upload_time': upload_time})
 
 @app.route('/reset_pattern', methods=['GET', 'POST'])
 def reset_pattern():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Reset the base phase pattern
@@ -491,7 +479,9 @@ def input_additional():
 
 @app.route('/add_fresnel_lens', methods=['POST'])
 def add_fresnel_lens():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
+
     if request.method == 'POST':
         #TODO: two focal lengths
 
@@ -511,7 +501,8 @@ def add_fresnel_lens():
 
 @app.route('/add_offset', methods=['POST'])
 def add_offset():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method =='POST':
         # Get x,y coordinates for the offset
@@ -530,7 +521,8 @@ def add_offset():
 
 @app.route('/add_zernike_poly', methods=['POST'])
 def add_zernike_poly():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Get the number of zernikes in the sum
@@ -557,7 +549,8 @@ def add_zernike_poly():
 
 @app.route('/use_aperture', methods=['POST'])
 def use_aperture():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Get the aperture size from the user
@@ -576,7 +569,8 @@ def use_aperture():
 
 @app.route('/save_add_phase', methods=['GET', 'POST'])
 def save_add_phase():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Get the file path from user
@@ -605,7 +599,8 @@ def save_add_phase():
 
 @app.route('/use_add_phase', methods=['GET', 'POST'])
 def use_add_phase():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Get file name input by user
@@ -627,7 +622,8 @@ def use_add_phase():
 
 @app.route('/add_pattern_to_add_phase', methods=['POST'])
 def add_pattern_to_add_phase():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
 
@@ -649,7 +645,8 @@ def add_pattern_to_add_phase():
 
 @app.route('/reset_additional_phase', methods=['POST'])
 def reset_additional_phase():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Reset the additional phase pattern
@@ -663,7 +660,8 @@ def reset_additional_phase():
 
 @app.route('/reset_aperture', methods=['POST'])
 def reset_aperture():
-    global current_slm_settings
+    global slm_list, slm_num
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
         # Reset the aperture
