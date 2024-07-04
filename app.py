@@ -131,7 +131,7 @@ def dashboard():
     global slm_list, slm_num
     if slm_num:
         current_slm_settings = slm_list[slm_num]
-    if current_slm_settings:
+    
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
         get_screenshot()
@@ -168,10 +168,10 @@ def project():
 
 def update_slm(dt):
     global slm_list, slm_num
+
     if slm_num:
         current_slm_settings = slm_list[slm_num]
 
-    if current_slm_settings:
         if project_flag.is_set():
             iface = current_slm_settings['iface']
             phase_mgr = current_slm_settings['phase_mgr']
@@ -254,7 +254,8 @@ def base_pattern():
 def calculate():
     global n_iterations, computational_space, pattern_path
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
 
