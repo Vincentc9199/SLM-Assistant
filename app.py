@@ -168,7 +168,8 @@ def project():
 
 def update_slm(dt):
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
 
     if current_slm_settings:
         if project_flag.is_set():
@@ -181,7 +182,8 @@ def update_slm(dt):
 
 def get_current_phase_info():
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
 
     phase_mgr = current_slm_settings['phase_mgr']
     # Get the file path of the base pattern
@@ -203,7 +205,8 @@ def get_current_phase_info():
 
 def get_screenshot():
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
     
     #TODO figure out if I can use pyglet instead
     displays = screeninfo.get_monitors()
@@ -228,7 +231,8 @@ def get_screenshot():
 @app.route('/display_targets')
 def display_targets():
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
 
     phase_mgr = current_slm_settings['phase_mgr']
     targets = utils.get_target_from_file(phase_mgr.base_source)
