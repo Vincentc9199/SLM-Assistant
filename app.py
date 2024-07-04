@@ -52,7 +52,7 @@ n_iterations = 20
 
 slm_list = []
 setup_slm_settings = {}
-slm_num = 0
+slm_num = None
 
 # Flag to control creating an slm
 create_flag = threading.Event()
@@ -129,7 +129,8 @@ def create_slm(dt):
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
     global slm_list, slm_num
-    current_slm_settings = slm_list[slm_num]
+    if slm_num:
+        current_slm_settings = slm_list[slm_num]
     if current_slm_settings:
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
