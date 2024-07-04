@@ -180,10 +180,11 @@ def update_slm(dt):
     if project_flag.is_set():
         if slm_num is not None:
             current_slm_settings = slm_list[slm_num]
-            print("Projecting from index, step 2:" + str(slm_num))
             iface = current_slm_settings['iface']
+            print(iface.slm)
             phase_mgr = current_slm_settings['phase_mgr']
             # Project pattern onto slm
+            print(current_slm_settings)
             iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
             # Clear the flag
             project_flag.clear()
