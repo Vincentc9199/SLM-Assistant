@@ -138,8 +138,7 @@ def dashboard():
     else:
         current_phase_info = None, None, None
         phase_mgr = None
-    return render_template('dashboard.html', current_phase_info=current_phase_info, 
-                           current_slm_settings=current_slm_settings,
+    return render_template('dashboard.html', current_phase_info=current_phase_info,
                            phase_mgr=phase_mgr)
 
 # Flag to control updating the projection on the slm
