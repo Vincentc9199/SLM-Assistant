@@ -132,8 +132,6 @@ def dashboard():
     if slm_num is not None:
         print('Dashboard is getting:' + str(slm_num))
         current_slm_settings = slm_list[slm_num]
-        print(current_slm_settings)
-        print(slm_list)
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
         get_screenshot()
@@ -155,9 +153,9 @@ def select_slm():
 
     if request.method == 'POST':
         user_input = request.form['slm_num']
-        print(user_input)
+        
         slm_num = int(user_input)
-        print(slm_num)
+        
         return redirect(url_for('dashboard'))
                 
     return redirect(url_for('dashboard'))
@@ -181,6 +179,7 @@ def update_slm(dt):
         if slm_num is not None:
             current_slm_settings = slm_list[slm_num]
             iface = current_slm_settings['iface']
+            print(iface)
             print(iface.slm)
             phase_mgr = current_slm_settings['phase_mgr']
             # Project pattern onto slm
