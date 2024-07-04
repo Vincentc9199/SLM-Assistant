@@ -50,7 +50,7 @@
     </form>
 
     <h2>Screenshot of SLM</h2>
-    {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
+    {% if current_slm_settings %}
         <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" alt="Screenshot of the SLM">
     {% endif %}
 

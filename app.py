@@ -52,7 +52,7 @@ n_iterations = 20
 
 slm_list = []
 setup_slm_settings = {}
-slm_num = None
+slm_num = 0
 
 # Flag to control creating an slm
 create_flag = threading.Event()
