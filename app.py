@@ -132,6 +132,8 @@ def dashboard():
     if slm_num is not None:
         print('Dashboard is getting:' + str(slm_num))
         current_slm_settings = slm_list[slm_num]
+        print(current_slm_settings)
+        print(slm_list)
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
         get_screenshot()
