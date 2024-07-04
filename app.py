@@ -130,7 +130,7 @@ def create_slm(dt):
 def dashboard():
     global slm_list, slm_num
     if slm_num is not None:
-        print('Dashboard is getting:' + slm_num)
+        print('Dashboard is getting:' + str(slm_num))
         current_slm_settings = slm_list[slm_num]
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
