@@ -69,8 +69,8 @@ def setup_calculation():
 
     if request.method == 'POST':
 
-        pattern_path = request.form['pattern_path']
-        computational_space = request.form['computational_space']
+        pattern_path = str(request.form['pattern_path'])
+        computational_space = int(request.form['computational_space'])
         computational_space = (computational_space, computational_space)
         n_iterations = int(request.form['n_iterations'])
 
