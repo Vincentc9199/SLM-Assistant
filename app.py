@@ -130,6 +130,7 @@ def create_slm(dt):
 def dashboard():
     global slm_list, slm_num
     if slm_num is not None:
+        print('Dashboard is getting:' + slm_num)
         current_slm_settings = slm_list[slm_num]
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
@@ -151,8 +152,10 @@ def select_slm():
     global slm_num
 
     if request.method == 'POST':
-        slm_num = int(request.form['slm_num'])
-
+        user_input = request.form['slm_num']
+        print(user_input)
+        slm_num = int(user_input)
+        print(slm_num)
         return redirect(url_for('dashboard'))
                 
     return redirect(url_for('dashboard'))
@@ -164,7 +167,7 @@ def project():
     if request.method == 'POST':
         if slm_num is not None:
             project_flag.set()
-
+            print(slm_num)
             return redirect(url_for('dashboard'))
         
     return redirect(url_for('dashboard'))
