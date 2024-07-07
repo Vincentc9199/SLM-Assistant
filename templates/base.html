@@ -18,6 +18,17 @@
             <li><a href="{{ url_for('additional_pattern') }}">Additional Patterns</a></li>
         </ul>
     </nav>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    
     <main>
         {% block content %}{% endblock %}
     </main>

@@ -5,30 +5,33 @@
 {% block content %}
     <h1>Dashboard</h1>
 
-    <h2>Select SLM</h2>
-    <form action="{{ url_for('select_slm') }}" method="POST">
-        <label for="slm_num">SLM Number:</label>
-        <input type="number" id="slm_num" name="slm_num">
-        <button type="submit">Select SLM</button>
-    </form>
-
-    <h2>Current Phase Info</h2>
-    
+    <h2>Current Calculation Settings</h2>
     <table>
         <tr>
-            <th>Base</th>
-            <th>Additional</th>
-            <th>Aperture</th>
+            <th>Pattern File Path</th>
+            <th>Computational Space</th>
+            <th>Number of Iterations</th>
         </tr>
         <tr>
-            <td>{{ current_phase_info[0] }}</td>
-            <td>{{ current_phase_info[1] }}</td>
-            <td>{{ current_phase_info[2] }}</td>
+            <td>{{ pattern_path }}</td>
+            <td>{{ computational_space }}</td>
+            <td>{{ n_iterations }}</td>
         </tr>
     </table>
+    
+    <h2>Select SLM</h2>
+    {% if slm_list %}
+        <form action="{{ url_for('select_slm') }}" method="POST">
+            {% for slm_dict in slm_list %}
+            <input type="radio" name="slm_num" id="{{ loop.index0 }}" value="{{ loop.index0 }}"> Display Number: {{ slm_dict['display_num']}} </input><br>
+            {% endfor %}
+            <input type="submit" value="Select SLM">
+        </form>
+    {% endif %}
 
     <h2>Current SLM Info</h2>
     
+    {% if current_slm_settings %}
     <table>
         <tr>
             <th>Display Number</th>
@@ -43,14 +46,34 @@
             <td>{{ current_slm_settings['wav_um'] }}</td>
         </tr>
     </table>
+    {% endif %}
+
+    <h2>Current Phase Info</h2>
     
+    {% if current_phase_info %}
+        <h3>Base:</h3>
+        <p>{{ current_phase_info[0] }}</p>
+
+        <h3>Additional:</h3>
+        <ul>
+            {% for entry in current_phase_info[1] %}
+                <li>{{ entry }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h3>Aperture:</h3>
+        <p>{{ current_phase_info[2] }}</p>
+    {% endif %}
+
     <h2>Project to SLM</h2>
-    <form action="{{ url_for('project') }}" method="POST">
-        <button type="submit">Project to SLM</button>
-    </form>
+    {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
+        <form action="{{ url_for('project') }}" method="POST">
+            <button type="submit">Project to SLM</button>
+        </form>
+    {% endif %}
 
     <h2>Screenshot of SLM</h2>
-    {% if current_slm_settings %}
+    {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
         <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" alt="Screenshot of the SLM">
     {% endif %}
 
@@ -66,8 +89,10 @@
                     const trace = {
                         x: data.x,
                         y: data.y,
-                        mode: 'markers',
-                        type: 'scatter'
+                        mode: 'markers+text',
+                        type: 'scatter',
+                        text: data.labels, // Add text labels
+                        textposition: 'top center'
                     };
                     const layout = {
                         title: 'Intended Target Array',

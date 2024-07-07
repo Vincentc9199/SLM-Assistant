@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 import os
 import Interface
 from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
@@ -11,51 +11,107 @@ import re
 import numpy as np
 #import yaml
 #import ast
-#TODO figure out if I can use pyglet instead
-#TODO try mss directly
 import screeninfo
 import mss.tools
 import datetime
 import pyglet
 import threading
 
-# Initialize app and random secret key
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+def start_flask_app():
+    app.run(port=8080, debug=False)
+
+# Custom event dispatcher class
+class SLMEventDispatcher(pyglet.event.EventDispatcher):
+    def create_slm(self):
+        self.dispatch_event('on_create_slm')
+
+    def project_pattern(self):
+        self.dispatch_event('on_project_pattern')
+
+SLMEventDispatcher.register_event_type('on_create_slm')
+SLMEventDispatcher.register_event_type('on_project_pattern')
+dispatcher = SLMEventDispatcher()
+
+@dispatcher.event
+def on_create_slm():
+    global setup_slm_settings, slm_list
+
+    iface = Interface.SLMSuiteInterface()
+
+    slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                            setup_slm_settings['bitdepth'], 
+                            wav_design_um=setup_slm_settings['wav_design_um'], 
+                            wav_um=setup_slm_settings['wav_um'])
+
+    phase_mgr = PhaseManager.PhaseManager(slm)
+    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+    iface.set_SLM(wrapped_slm)
+    iface.set_camera()
+
+    setup_slm_settings['iface'] = iface
+    setup_slm_settings['phase_mgr'] = phase_mgr
+
+    slm_list.append(setup_slm_settings.copy())
+
+    print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+    
+@dispatcher.event
+def on_project_pattern():
+    global slm_list, slm_num
+    
+    current_slm_settings = slm_list[slm_num]
+    iface = current_slm_settings['iface']
+    phase_mgr = current_slm_settings['phase_mgr']
+    # Project pattern onto slm
+    iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+
+    print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def start_pyglet_app():
     #TODO: try custom event handler instead
-    pyglet.clock.schedule(create_slm)
-    pyglet.clock.schedule(update_slm)
+    #pyglet.clock.schedule(create_slm)
+    #pyglet.clock.schedule(update_slm)
     pyglet.app.run()
+    
+    #event_loop = pyglet.app.EventLoop()
+    #event_loop.run()
+    print("Starting pyglet app")
 
-# Lists storing history of loaded base patterns
 base_load_history = []
 
-# Function to add the pattern file path if just a file name is given
-#This is Windows specific because filepaths start with C:
 def add_pattern_path(fname):
-    # check to see if it's an absolute path
     if re.match(r'[A-Z]:', fname) is None:
-        # if just name, add pattern path
         return pattern_path + fname
     else:
         return fname
     
-#TODO: have user input these
-# File path where phase patterns are stored
+
 pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
-# Default computational space
 computational_space = (2048, 2048)
-# Default number of iterations for GS algo
 n_iterations = 20
 
 slm_list = []
 setup_slm_settings = {}
 slm_num = None
-
-# Flag to control creating an slm
-create_flag = threading.Event()
 
 @app.route('/setup', methods=['GET', 'POST'])
 def setup():
@@ -68,14 +124,29 @@ def setup_calculation():
 
     if request.method == 'POST':
 
-        pattern_path = str(request.form['pattern_path'])
-        computational_space = int(request.form['computational_space'])
-        computational_space = (computational_space, computational_space)
-        n_iterations = int(request.form['n_iterations'])
+        new_pattern_path = request.form['pattern_path']
+        if new_pattern_path:
+            pattern_path = str(new_pattern_path)
+            print("Updated Pattern Path to: " + pattern_path)
+            flash("Updated Pattern Path to: " + pattern_path)
 
+        size = request.form['computational_space']
+        if size:
+            computational_space = (int(size), int(size))
+            print("Updated Computational Space to: " + str(computational_space))
+            flash("Updated Computational Space to: " + str(computational_space))
+
+        new_n_iterations = request.form['n_iterations']
+        if new_n_iterations:
+            n_iterations = int(new_n_iterations)
+            print("Updated Number of Iterations to: " + str(n_iterations))
+            flash("Updated Number of Iterations to: " + str(n_iterations))
+        
         return redirect(url_for('setup_calculation'))
     
     return render_template('setup_calculation.html')
+
+#create_flag = threading.Event()
 
 @app.route('/setup_slm', methods=['GET', 'POST'])
 def setup_slm():
@@ -84,36 +155,35 @@ def setup_slm():
     if request.method == 'POST':
 
         display_num = int(request.form['display_num'])
-        print(display_num)
         bitdepth = int(request.form['bitdepth'])
-        print(bitdepth)
         wav_design_um = float(request.form['wav_design_um'])
-        print(wav_design_um)
         wav_um = float(request.form['wav_um'])
-        print(wav_um)
 
         setup_slm_settings['display_num'] = display_num
         setup_slm_settings['bitdepth'] = bitdepth
         setup_slm_settings['wav_design_um'] = wav_design_um
         setup_slm_settings['wav_um'] = wav_um
         
-        create_flag.set()
+        #create_flag.set()
+        pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
+
         return redirect(url_for('setup_slm'))
 
     return render_template('setup_slm.html')
 
+"""
 # Function that creates the slm
 def create_slm(dt):
     global setup_slm_settings, slm_list
 
     if create_flag.is_set():
+        iface = Interface.SLMSuiteInterface()
 
         slm = ScreenMirrored(setup_slm_settings['display_num'], 
                                 setup_slm_settings['bitdepth'], 
                                 wav_design_um=setup_slm_settings['wav_design_um'], 
                                 wav_um=setup_slm_settings['wav_um'])
 
-        iface = Interface.SLMSuiteInterface()
         phase_mgr = PhaseManager.PhaseManager(slm)
         wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
         iface.set_SLM(wrapped_slm)
@@ -121,31 +191,62 @@ def create_slm(dt):
 
         setup_slm_settings['iface'] = iface
         setup_slm_settings['phase_mgr'] = phase_mgr
-        
+
         slm_list.append(setup_slm_settings.copy())
 
         create_flag.clear()
-     
+
+        print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+"""
+@app.route('/setup_virtual', methods=['POST'])
+def setup_virtual():
+
+    if request.method == 'POST':
+        setup_slm_settings['display_num'] = "virtual"
+
+        iface = Interface.SLMSuiteInterface()
+
+        slm = iface.set_SLM()
+
+        phase_mgr = PhaseManager.PhaseManager(slm)
+        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+        iface.set_SLM(wrapped_slm)
+        iface.set_camera()
+
+        setup_slm_settings['iface'] = iface
+        setup_slm_settings['phase_mgr'] = phase_mgr
+
+        slm_list.append(setup_slm_settings.copy())
+        
+        print("Succesfully setup SLM on display: " +str(setup_slm_settings['display_num']))
+        flash("Succesfully setup SLM on display: " +str(setup_slm_settings['display_num']))
+
+        return redirect(url_for('setup_slm'))
+
+    return redirect(url_for('setup_slm'))
+
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
     global slm_list, slm_num
     if slm_num is not None:
-        print('Dashboard is getting:' + str(slm_num))
         current_slm_settings = slm_list[slm_num]
         current_phase_info = get_current_phase_info()
         phase_mgr = current_slm_settings['phase_mgr']
-        get_screenshot()
+        if not current_slm_settings['display_num'] == "virtual":
+            get_screenshot()
     else:
-        current_phase_info = None, None, None
+        current_phase_info = None
         phase_mgr = None
         current_slm_settings = None
 
-    return render_template('dashboard.html', current_phase_info=current_phase_info, 
+    return render_template('dashboard.html', 
+                           current_phase_info=current_phase_info, 
                            current_slm_settings=current_slm_settings,
-                           phase_mgr=phase_mgr)
-
-# Flag to control updating the projection on the slm
-project_flag = threading.Event()
+                           phase_mgr=phase_mgr,
+                           slm_list=slm_list,
+                           pattern_path=pattern_path,
+                           computational_space=computational_space,
+                           n_iterations=n_iterations)
 
 @app.route('/select_slm', methods=['POST'])
 def select_slm():
@@ -155,110 +256,121 @@ def select_slm():
         user_input = request.form['slm_num']
         
         slm_num = int(user_input)
-        
+        print("SLM Number Set to: " + str(slm_num))
+        flash("SLM Number Set to: " + str(slm_num))
+
         return redirect(url_for('dashboard'))
                 
     return redirect(url_for('dashboard'))
 
+# Flag to control updating the projection on the slm
+#project_flag = threading.Event()
+
 @app.route('/project', methods=['POST'])
 def project():
-    global project_flag, slm_num
+    global project_flag, slm_num, slm_list
+    current_slm_settings = slm_list[slm_num]
 
     if request.method == 'POST':
-        if slm_num is not None:
-            project_flag.set()
-            print("Projecting from index:" + str(slm_num))
-            return redirect(url_for('dashboard'))
+        if slm_num is not None and not current_slm_settings['display_num'] == "virtual":
+            #project_flag.set()
+            pyglet.clock.schedule_once(lambda dt: dispatcher.project_pattern(), 0)
+            print("Ran the HTTP route to project")
+            return redirect(url_for('base_pattern'))
         
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('base_pattern'))
 
+"""
 def update_slm(dt):
     global slm_list, slm_num
         
     if project_flag.is_set():
-        if slm_num is not None:
-            current_slm_settings = slm_list[slm_num]
-            iface = current_slm_settings['iface']
-            print(iface)
-            print(iface.slm)
-            phase_mgr = current_slm_settings['phase_mgr']
-            # Project pattern onto slm
-            print(current_slm_settings)
-            iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
-            # Clear the flag
-            project_flag.clear()
+    
+        current_slm_settings = slm_list[slm_num]
+        iface = current_slm_settings['iface']
+        phase_mgr = current_slm_settings['phase_mgr']
+        # Project pattern onto slm
+        iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+        # Clear the flag
+        project_flag.clear()
+
+        print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
+"""
 
 def get_current_phase_info():
-    global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
+    global slm_list, slm_num, pattern_path
+    
+    current_slm_settings = slm_list[slm_num]
 
-        phase_mgr = current_slm_settings['phase_mgr']
-        # Get the file path of the base pattern
-        base_str = phase_mgr.base_source
+    phase_mgr = current_slm_settings['phase_mgr']
 
-        # String for additional phase patterns
-        add_str = ""
-        # Log of all additional phase patterns
-        log = phase_mgr.add_log
-        # Iterate over additional phase patterns and add to string
-        for item in log:
-            add_str = add_str + str(item[0]) + ":" + str(item[1]) + ","
+    # Get the file path of the base pattern
+    base_str = phase_mgr.base_source
 
-        # Get the aperture
-        aperture = phase_mgr.aperture
-        aperture_str = str(aperture)
+    # String for additional phase patterns
+    add_list = []
+    # Log of all additional phase patterns
+    log = phase_mgr.add_log
+    # Iterate over additional phase patterns and add to string
+    for item in log:
+        add_list.append(str(item[0]) + ":" + str(item[1]))
 
-        return base_str, add_str, aperture_str
-    else:
-        return None, None, None
+    # Get the aperture
+    aperture = phase_mgr.aperture
+    aperture_str = str(aperture)
+
+    print("Succesfully got phase info")
+    flash("Succesfully got phase info")
+
+    return base_str, add_list, aperture_str
     
 def get_screenshot():
     global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
     
-        #TODO figure out if I can use pyglet instead
-        displays = screeninfo.get_monitors()
-        display = displays[current_slm_settings['display_num']]
-        # Create area for screenshot
-        display_rect = {
-            "top": display.y,
-            "left": display.x,
-            "width": display.width,
-            "height": display.height
-        }
-        output = "static/images/slm_screenshot.png"
+    current_slm_settings = slm_list[slm_num]
 
-        # Take screenshot
-        sct = mss.mss()
-        screenshot = sct.grab(display_rect)
+    displays = screeninfo.get_monitors()
+    display = displays[current_slm_settings['display_num']]
+    # Create area for screenshot
+    display_rect = {
+        "top": display.y,
+        "left": display.x,
+        "width": display.width,
+        "height": display.height
+    }
+    output = "static/images/slm_screenshot.png"
 
-        # Save to the picture file
-        mss.tools.to_png(screenshot.rgb, screenshot.size, output=output)
-        print(output)
+    # Take screenshot
+    sct = mss.mss()
+    screenshot = sct.grab(display_rect)
+
+    # Save to the picture file
+    mss.tools.to_png(screenshot.rgb, screenshot.size, output=output)
+    print("Succesfully saved screenshot to: " + output)
+    flash("Succesfully saved screenshot to: " + output)
 
 @app.route('/display_targets')
 def display_targets():
     global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
+    
+    current_slm_settings = slm_list[slm_num]
 
-        phase_mgr = current_slm_settings['phase_mgr']
-        targets = utils.get_target_from_file(phase_mgr.base_source)
-        x_coords = targets[0].tolist()
-        y_coords = targets[1].tolist()
-        
-        return jsonify({'x': x_coords, 'y': y_coords})
+    phase_mgr = current_slm_settings['phase_mgr']
+    targets = utils.get_target_from_file(phase_mgr.base_source)
+    x_coords = targets[0].tolist()
+    y_coords = targets[1].tolist()
+    labels = list(range(len(x_coords)))
+
+    print("Displaying targets from: " + phase_mgr.base_source)
+    flash("Displaying targets from: " + phase_mgr.base_source)
+
+    return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
 
 @app.route('/base_pattern', methods=['GET', 'POST'])
 def base_pattern():
     global base_load_history,pattern_path, computational_space, n_iterations
 
-    return render_template('base_pattern.html', base_load_history = base_load_history, 
-                           pattern_path=pattern_path,
-                           computational_space=computational_space,
-                           n_iterations=n_iterations)
+    return render_template('base_pattern.html', base_load_history = base_load_history)
 
 @app.route('/calculate', methods=['GET', 'POST'])
 def calculate():
@@ -323,8 +435,8 @@ def calculate():
 
             save_path = request.form['save_path']
             save_name = request.form['save_name']
-            pattern_path = save_calculation(save_path, save_name)
-            load_base(pattern_path)
+            new_pattern_path = save_calculation(save_path, save_name)
+            load_base(new_pattern_path)
 
             return redirect(url_for('calculate'))
     
@@ -396,8 +508,8 @@ def calculate_grid():
             
             save_path = str(data['save_path'])
             save_name = str(data['save_name'])
-            pattern_path = save_calculation(save_path, save_name)
-            load_base(pattern_path)
+            new_pattern_path = save_calculation(save_path, save_name)
+            load_base(new_pattern_path)
 
             # Response to validate
             result = {'numPoints': num_points, 'xCoords': x_coords, 'yCoords': y_coords}
@@ -705,8 +817,11 @@ def reset_aperture():
     return redirect(url_for('additional_pattern'))
 
 if __name__ == '__main__':
-    threading.Thread(target=app.run, kwargs={'debug':False}, daemon=True).start()
+    flask_thread = threading.Thread(target=start_flask_app, daemon=True)
+    flask_thread.start()
+
     start_pyglet_app()
+    
 
 
 
