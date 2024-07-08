@@ -300,6 +300,7 @@ class SLMSuiteInterface:
         if self.cameraslm is None:
             return -1
         else:
+            print("Made it to iface")
             self.cameraslm.slm.write(base, name, settle=True)
 
     def perform_fourier_calibration(self, shape=[5,5], pitch=[30,40]):

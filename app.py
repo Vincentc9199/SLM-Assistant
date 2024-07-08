@@ -61,14 +61,15 @@ def on_create_slm():
 @dispatcher.event
 def on_project_pattern():
     global slm_list, slm_num
-    
+
+    print("Started even handler")
     current_slm_settings = slm_list[slm_num]
     iface = current_slm_settings['iface']
     phase_mgr = current_slm_settings['phase_mgr']
     # Project pattern onto slm
     iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
-
-    print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
+    
+    #print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
 
 
 
@@ -90,10 +91,10 @@ def start_pyglet_app():
     #TODO: try custom event handler instead
     #pyglet.clock.schedule(create_slm)
     #pyglet.clock.schedule(update_slm)
-    pyglet.app.run()
+    #pyglet.app.run()
     
-    #event_loop = pyglet.app.EventLoop()
-    #event_loop.run()
+    event_loop = pyglet.app.EventLoop()
+    event_loop.run()
     print("Starting pyglet app")
 
 base_load_history = []
@@ -276,9 +277,9 @@ def project():
             #project_flag.set()
             pyglet.clock.schedule_once(lambda dt: dispatcher.project_pattern(), 0)
             print("Ran the HTTP route to project")
-            return redirect(url_for('base_pattern'))
+            return redirect(url_for('dashboard'))
         
-    return redirect(url_for('base_pattern'))
+    return redirect(url_for('dashboard'))
 
 """
 def update_slm(dt):
