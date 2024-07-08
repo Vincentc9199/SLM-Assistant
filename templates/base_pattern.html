@@ -35,4 +35,10 @@
             {% endfor %}
         </table>
     {% endif %}
+
+    <h2>Calculation Plots</h2>
+    
+    <img src="{{ url_for('static', filename='images/nearfield.png') }}" alt="Nearfield Plot">
+    <img src="{{ url_for('static', filename='images/farfield.png') }}" alt="Farfield Plot">
+    <img src="{{ url_for('static', filename='images/stats.png') }}" alt="Statistics Plot">
 {% endblock %}

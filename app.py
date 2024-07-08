@@ -71,22 +71,6 @@ def on_project_pattern():
     
     #print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def start_pyglet_app():
     #TODO: try custom event handler instead
     #pyglet.clock.schedule(create_slm)
@@ -95,7 +79,7 @@ def start_pyglet_app():
     
     event_loop = pyglet.app.EventLoop()
     event_loop.run()
-    print("Starting pyglet app")
+    #print("Starting pyglet app")
 
 base_load_history = []
 
@@ -199,6 +183,7 @@ def create_slm(dt):
 
         print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
 """
+
 @app.route('/setup_virtual', methods=['POST'])
 def setup_virtual():
 
@@ -280,7 +265,6 @@ def project():
             return redirect(url_for('dashboard'))
         
     return redirect(url_for('dashboard'))
-
 """
 def update_slm(dt):
     global slm_list, slm_num
@@ -297,7 +281,6 @@ def update_slm(dt):
 
         print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
 """
-
 def get_current_phase_info():
     global slm_list, slm_num, pattern_path
     
@@ -367,9 +350,14 @@ def display_targets():
 
     return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
 
+
+
+
+
+
 @app.route('/base_pattern', methods=['GET', 'POST'])
 def base_pattern():
-    global base_load_history,pattern_path, computational_space, n_iterations
+    global base_load_history
 
     return render_template('base_pattern.html', base_load_history = base_load_history)
 
