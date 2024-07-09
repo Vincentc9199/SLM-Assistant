@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask_socketio import SocketIO
 import os
 import Interface
 from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
@@ -19,9 +20,21 @@ import threading
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+socketio = SocketIO(app)
+
+#window = pyglet.window.Window(visible=True)
 
 def start_flask_app():
-    app.run(port=8080, debug=False)
+    socketio.run(app, port=8080, debug=False)
+
+def start_pyglet_app():
+
+    #pyglet.clock.schedule(create_slm)
+    #pyglet.clock.schedule(update_slm)
+    pyglet.app.run()
+    
+    #event_loop = pyglet.app.EventLoop()
+    #event_loop.run()
 
 # Custom event dispatcher class
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
@@ -35,52 +48,6 @@ SLMEventDispatcher.register_event_type('on_create_slm')
 SLMEventDispatcher.register_event_type('on_project_pattern')
 dispatcher = SLMEventDispatcher()
 
-@dispatcher.event
-def on_create_slm():
-    global setup_slm_settings, slm_list
-
-    iface = Interface.SLMSuiteInterface()
-
-    slm = ScreenMirrored(setup_slm_settings['display_num'], 
-                            setup_slm_settings['bitdepth'], 
-                            wav_design_um=setup_slm_settings['wav_design_um'], 
-                            wav_um=setup_slm_settings['wav_um'])
-
-    phase_mgr = PhaseManager.PhaseManager(slm)
-    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
-    iface.set_SLM(wrapped_slm)
-    iface.set_camera()
-
-    setup_slm_settings['iface'] = iface
-    setup_slm_settings['phase_mgr'] = phase_mgr
-
-    slm_list.append(setup_slm_settings.copy())
-
-    print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
-    
-@dispatcher.event
-def on_project_pattern():
-    global slm_list, slm_num
-
-    print("Started even handler")
-    current_slm_settings = slm_list[slm_num]
-    iface = current_slm_settings['iface']
-    phase_mgr = current_slm_settings['phase_mgr']
-    # Project pattern onto slm
-    iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
-    
-    #print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
-
-def start_pyglet_app():
-    #TODO: try custom event handler instead
-    #pyglet.clock.schedule(create_slm)
-    #pyglet.clock.schedule(update_slm)
-    #pyglet.app.run()
-    
-    event_loop = pyglet.app.EventLoop()
-    event_loop.run()
-    #print("Starting pyglet app")
-
 base_load_history = []
 
 def add_pattern_path(fname):
@@ -89,7 +56,6 @@ def add_pattern_path(fname):
     else:
         return fname
     
-
 pattern_path = '/Users/vincentcosta/Documents/Summer_Research/NaCsSLM-master-2/lib/'
 computational_space = (2048, 2048)
 n_iterations = 20
@@ -156,6 +122,29 @@ def setup_slm():
 
     return render_template('setup_slm.html')
 
+@dispatcher.event
+def on_create_slm():
+    global setup_slm_settings, slm_list
+
+    iface = Interface.SLMSuiteInterface()
+
+    slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                            setup_slm_settings['bitdepth'], 
+                            wav_design_um=setup_slm_settings['wav_design_um'], 
+                            wav_um=setup_slm_settings['wav_um'])
+
+    phase_mgr = PhaseManager.PhaseManager(slm)
+    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+    iface.set_SLM(wrapped_slm)
+    iface.set_camera()
+
+    setup_slm_settings['iface'] = iface
+    setup_slm_settings['phase_mgr'] = phase_mgr
+
+    slm_list.append(setup_slm_settings.copy())
+
+    print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+
 """
 # Function that creates the slm
 def create_slm(dt):
@@ -186,6 +175,7 @@ def create_slm(dt):
 
 @app.route('/setup_virtual', methods=['POST'])
 def setup_virtual():
+    global setup_slm_settings, slm_list
 
     if request.method == 'POST':
         setup_slm_settings['display_num'] = "virtual"
@@ -210,6 +200,39 @@ def setup_virtual():
         return redirect(url_for('setup_slm'))
 
     return redirect(url_for('setup_slm'))
+
+#TODO: ask how this should be used
+@app.route('/use_slm_amp', methods=['GET', 'POST'])
+def use_slm_amp():
+    global slm_list, slm_num
+
+    if request.method == 'POST':
+        if slm_num is not None:
+            current_slm_settings = slm_list[slm_num]
+            iface = current_slm_settings['iface']
+
+            func = request.form['func']
+            if func == "gaussian":
+                waist_x = float(request.form['waist_x'])
+                waist_y = float(request.form['waist_y'])
+
+                shape = iface.slm.shape
+                xpix = (shape[1] - 1) *  np.linspace(-.5, .5, shape[1])
+                ypix = (shape[0] - 1) * np.linspace(-.5, .5, shape[0])
+
+                x_grid, y_grid = np.meshgrid(xpix, ypix)
+
+                gaussian_amp = np.exp(-np.square(x_grid) * (1 / waist_x**2)) * np.exp(-np.square(y_grid) * (1 / waist_y**2))
+
+                iface.set_slm_amplitude(gaussian_amp)
+                print(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
+                flash(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
+            else:
+                print("Unknown amp type")
+
+        return redirect(url_for('use_slm_amp'))
+    
+    return render_template('use_slm_amp.html')
 
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
@@ -265,6 +288,20 @@ def project():
             return redirect(url_for('dashboard'))
         
     return redirect(url_for('dashboard'))
+
+@dispatcher.event
+def on_project_pattern():
+    global slm_list, slm_num
+
+    print("Started even handler")
+    current_slm_settings = slm_list[slm_num]
+    iface = current_slm_settings['iface']
+    phase_mgr = current_slm_settings['phase_mgr']
+    # Project pattern onto slm
+    iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
+    
+    print("Succesfully projected to display: " + str(current_slm_settings['display_num']))
+
 """
 def update_slm(dt):
     global slm_list, slm_num
@@ -350,11 +387,6 @@ def display_targets():
 
     return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
 
-
-
-
-
-
 @app.route('/base_pattern', methods=['GET', 'POST'])
 def base_pattern():
     global base_load_history
@@ -416,7 +448,6 @@ def calculate():
             iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
 
             # Plot stuff about the calculation, does not work at the moment
-            # TODO: change the interface code not to plot them, save as image and render on html page
             #TODO: ask why these are passed with no args
             iface.plot_slmplane()
             iface.plot_farfield()
@@ -490,7 +521,6 @@ def calculate_grid():
             iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
 
             # Plot stuff about the calculation, does not work at the moment
-            # TODO: change the interface code not to plot them, save as image and render on html page
             iface.plot_slmplane()
             iface.plot_farfield()
             iface.plot_stats()
@@ -535,7 +565,7 @@ def save_calculation(save_path, save_name):
         print(err)
         return new_pattern_path[:-9]
 
-@app.route('/use_pattern', methods=['GET', 'POST'])
+@app.route('/use_pattern', methods=['POST'])
 def use_pattern():
     
     if request.method == 'POST':
@@ -550,9 +580,9 @@ def use_pattern():
 
         load_base(fname)
 
-        return redirect(url_for('use_pattern'))
+        return redirect(url_for('base_pattern'))
     
-    return render_template('use_pattern.html')
+    return render_template('base_pattern')
 
 def load_base(fname):
     global slm_list, slm_num, base_load_history
@@ -911,35 +941,6 @@ def init_hologram():
         return redirect(url_for('init_hologram'))
     
     return render_template('init_hologram.html')
-"""
-#TODO: ask how this should be used
-"""
-@app.route('/use_slm_amp', methods=['GET', 'POST'])
-def use_slm_amp():
-    global iface
-
-    if request.method == 'POST':
-
-        func = request.form['func']
-        if func == "gaussian":
-            waist_x = request.form['waist_x']
-            waist_y = request.form['waist_y']
-
-            shape = iface.slm.shape
-            xpix = (shape[1] - 1) *  np.linspace(-.5, .5, shape[1])
-            ypix = (shape[0] - 1) * np.linspace(-.5, .5, shape[0])
-
-            x_grid, y_grid = np.meshgrid(xpix, ypix)
-
-            gaussian_amp = np.exp(-np.square(x_grid) * (1 / waist_x**2)) * np.exp(-np.square(y_grid) * (1 / waist_y**2))
-
-            iface.set_slm_amplitude(gaussian_amp)
-        else:
-            print("Unknown amp type")
-
-        return redirect(url_for('use_slm_amp'))
-    
-    return render_template('use_slm_amp.html')
 """
 
 #TODO: do we need to be able to get just the base or just the additional phase, or is just

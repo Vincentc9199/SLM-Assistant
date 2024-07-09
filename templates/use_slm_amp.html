@@ -1,0 +1,17 @@
+{% extends "setup.html" %}
+
+{% block setup %}
+    <h1>Setup SLM Amplitude</h1>
+    <form method="POST">
+        <label for="func">Amplitude Type:</label>
+        <input type="text" id="func" name="func">
+
+        <label for="waist_x">Waist (x):</label>
+        <input type="number" id="waist_x" name="waist_x" step="0.001">
+
+        <label for="waist_y">Waist (y):</label>
+        <input type="number" id="waist_y" name="waist_y" step="0.001">
+        
+        <button type="submit">Submit Amplitude Setttings</button>
+    </form>
+{% endblock %}

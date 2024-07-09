@@ -1,6 +1,6 @@
-{% extends "base_pattern.html" %}
+{% extends "base.html" %}
 
-{% block get_base %}
+{% block content %}
 
 <h2>Calculate: Input Coordinates</h2>
 
@@ -25,7 +25,7 @@
 </script>
 
 <h3>Input Coordinates</h3>
-<form method="post">
+<form id ="mainform" method="post">
     <div id="coordinates-container">
         <div class="point">
             <input type="number" name="x_coords" placeholder="x" required>
@@ -44,4 +44,30 @@
     <input type="text" id="save_name" name="save_name" required><br><br>
     <input type="submit" value="Start Calculation">
 </form>
+ 
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+
+<script type = "text/javascript">
+    window.onload = function () {
+        const socket = io();
+        socket.connect("http://127.0.0.1:8080");
+        socket.on("connect", function () {
+            console.log("Connected");
+        })
+        socket.on("update progress", function(percent) {
+            // do something with percent
+            console.log("Got percent: " + percent)
+        })
+    }
+</script>
+
+<div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar" style="width:10%">10%</div>
+</div>
+
+<h2>Calculation Plots</h2>
+    
+    <img src="{{ url_for('static', filename='images/slmplane.png') }}" class="img-fluid" alt="Nearfield Plot">
+    <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
+    <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
 {% endblock %}

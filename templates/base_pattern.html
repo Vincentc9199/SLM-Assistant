@@ -8,16 +8,21 @@
         <ul>
             <li><a href="{{ url_for('calculate') }}">Calculate: Input Coordinates</a></li>
             <li><a href="{{ url_for('calculate_grid') }}">Calculate: Grid</a></li>
-            <li><a href="{{ url_for('use_pattern') }}">Load from File</a></li>
         </ul>
     </nav>
+
+    <h2>Load Base Pattern from File</h2>
+
+    <form action="{{ url_for('use_pattern') }}" method="POST" enctype="multipart/form-data">
+        <label for="fname">File Name:</label>
+        <input type="file" id="fname" name="fname"><br><br>
+        <input type="submit" value="Upload">
+    </form>
 
     <h2>Reset Base Phase Patterns</h2>
     <form action="{{ url_for('reset_pattern') }}" method="POST">
         <input type="submit" value="Reset Base Pattern">
     </form>
-
-    {% block get_base %}{% endblock %}
 
     <h2>History of Loaded Base Patterns</h2>
     {% if base_load_history %}
@@ -36,9 +41,4 @@
         </table>
     {% endif %}
 
-    <h2>Calculation Plots</h2>
-    
-    <img src="{{ url_for('static', filename='images/nearfield.png') }}" alt="Nearfield Plot">
-    <img src="{{ url_for('static', filename='images/farfield.png') }}" alt="Farfield Plot">
-    <img src="{{ url_for('static', filename='images/stats.png') }}" alt="Statistics Plot">
 {% endblock %}

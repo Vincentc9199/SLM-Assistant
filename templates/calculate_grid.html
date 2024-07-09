@@ -1,6 +1,6 @@
-{% extends "base_pattern.html" %}
+{% extends "base.html" %}
 
-{% block get_base %}
+{% block content %}
 <h2>Calculate: Grid</h2>
 
 <div class="input-container">
@@ -20,17 +20,32 @@
     <input type="text" id="save_name" name="save_name">
 </div>
     
-<canvas id="canvas" width="960" height="960"></canvas>
+<canvas id="canvas" width="960" height="960" style="border:1px solid #000;"></canvas>
 <div class="button-container">
     <button onclick="submitPoints()">Start Calculation</button>
 </div>
 
+<h2>Calculation Plots</h2>
+    
+    <img src="{{ url_for('static', filename='images/nearfield.png') }}" class="img-fluid" alt="Nearfield Plot">
+    <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
+    <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
+    
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
 
 <script>
     var canvas = new fabric.Canvas('canvas');
     var xCoords = [];
     var yCoords = [];
+
+    // Create a label to display the coordinates
+    var coordinateLabel = document.createElement('div');
+    coordinateLabel.id = 'coordinateLabel';
+    coordinateLabel.style.position = 'absolute';
+    coordinateLabel.style.padding = '5px';
+    coordinateLabel.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+    coordinateLabel.style.border = '1px solid #ccc';
+    document.body.appendChild(coordinateLabel);
 
     // Create grid of pixels
     var numPixels = 64; // Adjust number of pixels as needed
@@ -77,9 +92,21 @@
                 console.log('yCoords:', yCoords);
                 canvas.renderAll();
             });
+
+            pixel.on('mousemove', function(options) {
+                var x = this.get('data-x');
+                var y = this.get('data-y');
+                coordinateLabel.innerHTML = `Hovering over: (${x}, ${y})`;
+                var event = options.e;
+                coordinateLabel.style.left = (event.clientX + window.scrollX + 10) + 'px';
+                coordinateLabel.style.top = (event.clientY + window.scrollY + 10) + 'px';
+            });
         }
     }
 
+canvas.on('mouse:out', function() {
+    coordinateLabel.innerHTML = ''; // Clear the label when the mouse leaves the canvas
+});
 
 function submitPoints() {
 
