@@ -17,10 +17,15 @@ import mss.tools
 import datetime
 import pyglet
 import threading
+import queue
+import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
+
+# Thread-safe queue to handle event dispatches
+event_queue = queue.Queue()
 
 #window = pyglet.window.Window(visible=True)
 
@@ -35,7 +40,7 @@ def start_pyglet_app():
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
         print("Dispatching 'on_create_slm' event")
-        self.dispatch_event('on_create_slm')
+        event_queue.put('create_slm')
 
     def project_pattern(self):
         self.dispatch_event('on_project_pattern')
@@ -1007,13 +1012,24 @@ def save_config():
         
     return redirect(url_for('config'))
 
+def pyglet_event_loop():
+    print("Starting Pyglet event loop...")
+    while True:
+        pyglet.app.platform_event_loop.step()
+        while not event_queue.empty():
+            event = event_queue.get()
+            if event == 'create_slm':
+                dispatcher.create_slm()
+        pyglet.clock.tick()
+        pyglet.app.platform_event_loop.step()
 
 if __name__ == '__main__':
     flask_thread = threading.Thread(target=start_flask_app)
     flask_thread.daemon = True
     flask_thread.start()
 
-    start_pyglet_app()
+    # Start Pyglet event loop in the main thread
+    pyglet_event_loop()
     
 
 """
