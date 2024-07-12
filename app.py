@@ -109,24 +109,27 @@ def on_create_slm():
 
     print("Creating SLM with settings:", setup_slm_settings)
 
-    iface = Interface.SLMSuiteInterface()
+    try:
+        iface = Interface.SLMSuiteInterface()
 
-    slm = ScreenMirrored(setup_slm_settings['display_num'], 
-                            setup_slm_settings['bitdepth'], 
-                            wav_design_um=setup_slm_settings['wav_design_um'], 
-                            wav_um=setup_slm_settings['wav_um'])
+        slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                                setup_slm_settings['bitdepth'], 
+                                wav_design_um=setup_slm_settings['wav_design_um'], 
+                                wav_um=setup_slm_settings['wav_um'])
 
-    phase_mgr = PhaseManager.PhaseManager(slm)
-    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
-    iface.set_SLM(wrapped_slm)
-    iface.set_camera()
+        phase_mgr = PhaseManager.PhaseManager(slm)
+        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+        iface.set_SLM(wrapped_slm)
+        iface.set_camera()
 
-    setup_slm_settings['iface'] = iface
-    setup_slm_settings['phase_mgr'] = phase_mgr
+        setup_slm_settings['iface'] = iface
+        setup_slm_settings['phase_mgr'] = phase_mgr
 
-    slm_list.append(setup_slm_settings.copy())
+        slm_list.append(setup_slm_settings.copy())
 
-    print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+        print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+    except Exception as e:
+        print("Error creating SLM:", e)
 
 @app.route('/setup_virtual', methods=['GET'])
 def setup_virtual():
