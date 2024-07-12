@@ -33,6 +33,7 @@ def start_pyglet_app():
 
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
+        print("Dispatching 'on_create_slm' event")
         self.dispatch_event('on_create_slm')
 
     def project_pattern(self):
@@ -97,6 +98,7 @@ def setup_slm():
         setup_slm_settings['wav_design_um'] = wav_design_um
         setup_slm_settings['wav_um'] = wav_um
         
+        print("Scheduling create_slm event")
         pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
 
         return redirect(url_for('setup_slm'))
@@ -1009,7 +1011,11 @@ if __name__ == '__main__':
     flask_thread.daemon = True
     flask_thread.start()
 
-    print("Starting Pyglet app...")   
+    print("Starting Pyglet app...")
+
+    # Schedule a test event dispatch to ensure the dispatcher works
+    pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
+    
     pyglet.app.run()
     
 
