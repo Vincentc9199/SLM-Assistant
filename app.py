@@ -25,6 +25,7 @@ socketio = SocketIO(app)
 #window = pyglet.window.Window(visible=True)
 
 def start_flask_app():
+    print("Starting Flask app...")
     socketio.run(app, port=8080, debug=False)
 
 def start_pyglet_app():
@@ -105,6 +106,8 @@ def setup_slm():
 @dispatcher.event
 def on_create_slm():
     global setup_slm_settings, slm_list
+
+    print("Creating SLM with settings:", setup_slm_settings)
 
     iface = Interface.SLMSuiteInterface()
 
@@ -1003,12 +1006,33 @@ if __name__ == '__main__':
     flask_thread.daemon = True
     flask_thread.start()
 
-    pyglet_thread = threading.Thread(target=start_pyglet_app)
-    pyglet_thread.daemon = True
-    pyglet_thread.start()
+    @dispatcher.event
+    def on_create_slm():
+        global setup_slm_settings, slm_list
 
-    flask_thread.join()
-    pyglet_thread.join()
+        print("Creating SLM with settings:", setup_slm_settings)
+
+        iface = Interface.SLMSuiteInterface()
+
+        slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                                setup_slm_settings['bitdepth'], 
+                                wav_design_um=setup_slm_settings['wav_design_um'], 
+                                wav_um=setup_slm_settings['wav_um'])
+
+        phase_mgr = PhaseManager.PhaseManager(slm)
+        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+        iface.set_SLM(wrapped_slm)
+        iface.set_camera()
+
+        setup_slm_settings['iface'] = iface
+        setup_slm_settings['phase_mgr'] = phase_mgr
+
+        slm_list.append(setup_slm_settings.copy())
+
+        print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
+        
+    print("Starting Pyglet app...")   
+    start_pyglet_app
     
 
 """
