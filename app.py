@@ -17,30 +17,22 @@ import mss.tools
 import datetime
 import pyglet
 import threading
-import queue
-import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
-# Thread-safe queue to handle event dispatches
-event_queue = queue.Queue()
-
 #window = pyglet.window.Window(visible=True)
 
 def start_flask_app():
-    print("Starting Flask app...")
     socketio.run(app, port=8080, debug=False)
 
 def start_pyglet_app():
-    print("Starting Pyglet app...")
     pyglet.app.run()
 
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
-        print("Dispatching 'on_create_slm' event")
-        event_queue.put('create_slm')
+        self.dispatch_event('on_create_slm')
 
     def project_pattern(self):
         self.dispatch_event('on_project_pattern')
@@ -104,10 +96,7 @@ def setup_slm():
         setup_slm_settings['wav_design_um'] = wav_design_um
         setup_slm_settings['wav_um'] = wav_um
         
-        #print("Scheduling create_slm event")
-        event_queue.put('create_slm')
-        #pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
-        #print("Event scheduled")
+        pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
 
         return redirect(url_for('setup_slm'))
 
@@ -117,29 +106,24 @@ def setup_slm():
 def on_create_slm():
     global setup_slm_settings, slm_list
 
-    print("Creating SLM with settings:", setup_slm_settings)
+    iface = Interface.SLMSuiteInterface()
 
-    try:
-        iface = Interface.SLMSuiteInterface()
+    slm = ScreenMirrored(setup_slm_settings['display_num'], 
+                            setup_slm_settings['bitdepth'], 
+                            wav_design_um=setup_slm_settings['wav_design_um'], 
+                            wav_um=setup_slm_settings['wav_um'])
 
-        slm = ScreenMirrored(setup_slm_settings['display_num'], 
-                                setup_slm_settings['bitdepth'], 
-                                wav_design_um=setup_slm_settings['wav_design_um'], 
-                                wav_um=setup_slm_settings['wav_um'])
-        print("SLM object created")
-        phase_mgr = PhaseManager.PhaseManager(slm)
-        wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
-        iface.set_SLM(wrapped_slm)
-        iface.set_camera()
+    phase_mgr = PhaseManager.PhaseManager(slm)
+    wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
+    iface.set_SLM(wrapped_slm)
+    iface.set_camera()
 
-        setup_slm_settings['iface'] = iface
-        setup_slm_settings['phase_mgr'] = phase_mgr
+    setup_slm_settings['iface'] = iface
+    setup_slm_settings['phase_mgr'] = phase_mgr
 
-        slm_list.append(setup_slm_settings.copy())
+    slm_list.append(setup_slm_settings.copy())
 
-        print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
-    except Exception as e:
-        print("Error creating SLM:", e)
+    print("Succesfully setup SLM on display: " + str(setup_slm_settings['display_num']))
 
 @app.route('/setup_virtual', methods=['GET'])
 def setup_virtual():
@@ -1013,24 +997,11 @@ def save_config():
         
     return redirect(url_for('config'))
 
-def pyglet_event_loop():
-    print("Starting Pyglet event loop...")
-    while True:
-        pyglet.app.platform_event_loop.step()
-        while not event_queue.empty():
-            event = event_queue.get()
-            if event == 'create_slm':
-                dispatcher.create_slm()
-        pyglet.clock.tick()
-        pyglet.app.platform_event_loop.step()
 
 if __name__ == '__main__':
-    flask_thread = threading.Thread(target=start_flask_app)
-    flask_thread.daemon = True
+    flask_thread = threading.Thread(target=start_flask_app, daemon=True)
     flask_thread.start()
-
-    # Start Pyglet event loop in the main thread
-    pyglet_event_loop()
+    start_pyglet_app()
     
 
 """
