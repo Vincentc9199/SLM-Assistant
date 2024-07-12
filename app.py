@@ -22,16 +22,13 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
-#window = pyglet.window.Window(visible=True)
+initial_window = pyglet.window.Window(visible=False)
 
 def start_flask_app():
     socketio.run(app, port=8080, debug=False)
 
 def start_pyglet_app():
-    while True:
-        pyglet.app.platform_event_loop().process_events()
-        pyglet.clock.tick()
-        pyglet.app.platform_event_loop().dispatch_event()
+    pyglet.app.run()
     
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
