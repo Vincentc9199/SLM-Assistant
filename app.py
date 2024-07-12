@@ -29,7 +29,8 @@ def start_flask_app():
 
 def start_pyglet_app():
     pyglet.app.run()
-
+    pyglet.app.platform_event_loop()
+    
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
         self.dispatch_event('on_create_slm')
