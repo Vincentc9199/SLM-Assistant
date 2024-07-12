@@ -104,9 +104,10 @@ def setup_slm():
         setup_slm_settings['wav_design_um'] = wav_design_um
         setup_slm_settings['wav_um'] = wav_um
         
-        print("Scheduling create_slm event")
-        pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
-        print("Event scheduled")
+        #print("Scheduling create_slm event")
+        event_queue.put('create_slm')
+        #pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
+        #print("Event scheduled")
 
         return redirect(url_for('setup_slm'))
 
