@@ -29,6 +29,7 @@ def start_flask_app():
     socketio.run(app, port=8080, debug=False)
 
 def start_pyglet_app():
+    print("Starting Pyglet app...")
     pyglet.app.run()
 
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
@@ -100,6 +101,7 @@ def setup_slm():
         
         print("Scheduling create_slm event")
         pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
+        print("Event scheduled")
 
         return redirect(url_for('setup_slm'))
 
@@ -118,7 +120,7 @@ def on_create_slm():
                                 setup_slm_settings['bitdepth'], 
                                 wav_design_um=setup_slm_settings['wav_design_um'], 
                                 wav_um=setup_slm_settings['wav_um'])
-
+        print("SLM object created")
         phase_mgr = PhaseManager.PhaseManager(slm)
         wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
         iface.set_SLM(wrapped_slm)
@@ -1011,12 +1013,10 @@ if __name__ == '__main__':
     flask_thread.daemon = True
     flask_thread.start()
 
-    print("Starting Pyglet app...")
-
-    # Schedule a test event dispatch to ensure the dispatcher works
-    pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
-    
-    pyglet.app.run()
+    # Wait for Flask app to initialize and then start the Pyglet app
+    print("Sleeping to allow Flask to start...")
+    threading.Event().wait(5)  # Adjust the wait time if needed
+    start_pyglet_app()
     
 
 """
