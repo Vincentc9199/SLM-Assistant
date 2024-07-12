@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Configs - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <div class="row">
+        <div class="col-sm-8">
+            <form action="{{ url_for('load_config') }}" method="POST" enctype="multipart/form-data">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="file" id="filename" name="filename">
+                    <button type="submit" class="btn btn-outline-primary">Upload Config</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-">
+            <form action="{{ url_for('save_config') }}" method="POST">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                    <button class="btn btn-outline-primary" type="submit">Save Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

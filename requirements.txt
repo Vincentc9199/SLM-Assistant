@@ -5,3 +5,5 @@ PyYAML
 pyzmq
 mss
 pyglet==1.5.28
+flask-socketio
+screeninfo

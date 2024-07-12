@@ -1,17 +1,27 @@
-{% extends "setup.html" %}
+{% extends "base.html" %}
 
-{% block setup %}
-    <h1>Setup SLM Amplitude</h1>
+{% block title %}Setup Amplitude - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('use_slm_amp') }}">Setup SLM Amplitude</a></li>
+    </ul>
+</div>
+
+<div class="container p-2">
     <form method="POST">
-        <label for="func">Amplitude Type:</label>
-        <input type="text" id="func" name="func">
-
-        <label for="waist_x">Waist (x):</label>
-        <input type="number" id="waist_x" name="waist_x" step="0.001">
-
-        <label for="waist_y">Waist (y):</label>
-        <input type="number" id="waist_y" name="waist_y" step="0.001">
-        
-        <button type="submit">Submit Amplitude Setttings</button>
+        <div class="input-group mb-3">
+            <select class="form-select" id="func" name="func">
+                <option selected>Amplitude Type</option>
+                <option value="gaussian">Gaussian</option>
+            </select>
+            <input type="number" id="waist_x" name="waist_x" step="0.001" class="form-control" placeholder="Waist (x)">
+            <input type="number" id="waist_y" name="waist_y" step="0.001" class="form-control" placeholder="Waist (y)">
+            <button type="submit" class="btn btn-outline-primary">Submit Amplitude Settings</button>
+        </div>
     </form>
+</div>
 {% endblock %}

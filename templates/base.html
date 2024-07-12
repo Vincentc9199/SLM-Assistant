@@ -11,14 +11,13 @@
 <body>
 
     <header>
-        <div class="container-fluid p-2 bg-primary text-white">
-            <h1 class="display-5">SLM Assistant <span class="badge bg-info">1.0.0</span></h1>
+        <div class="container-fluid p-2 bg-dark text-bg-dark">
+            <h1 class="display-6">SLM Assistant <span class="badge bg-secondary-subtle text-dark">1.0.0</span></h1>
         </div>
     </header>
 
-    <nav class="navbar navbar-expand-sm bg-light navbar-light sticky-top">
+    <nav class="navbar navbar-expand-sm bg-secondary-subtle navbar-secondary-subtle sticky-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Logo</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -28,9 +27,8 @@
                         <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="{{ url_for('setup') }}" role="button" data-bs-toggle="dropdown">Setup</a>
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Setup</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('setup') }}">Setup Home</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('use_slm_amp') }}">Setup SLM Amplitude</a></li>
@@ -39,19 +37,22 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="{{ url_for('base_pattern') }}" role="button" data-bs-toggle="dropdown">Base Pattern</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('base_pattern') }}">Base Pattern Home</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('calculate') }}">Calculate: Input Coordinates</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('calculate_grid') }}">Calculate: Grid</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('calculate') }}">Targets - Manual Input</a></li>
+                            <li><a class="dropdown-item disabled" href="{{ url_for('calculate_grid') }}">Targets - Grid</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('targets') }}">Plot Target</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="{{ url_for('additional_pattern') }}" role="button" data-bs-toggle="dropdown">Additional Patterns</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('additional_pattern') }}">Additional Patterns Home</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('additional_pattern') }}">Additional Patterns Hub</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('input_additional') }}">Input Additional Patterns</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('save_add_phase') }}">Save Additional Patterns</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('use_add_phase') }}">Load from File</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('correction') }}">Manufacturer Corrections</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('config') }}">Config</a>
                     </li>
                 </ul>
             </div>
@@ -74,7 +75,7 @@
     </main>
     
     <footer>
-        <div class="container-fluid p-2 text-bg-light">
+        <div class="container-fluid p-2 bg-secondary-subte text-dark">
             <p>&copy; 2024 Vincent Costa</p>
         </div>
     </footer>

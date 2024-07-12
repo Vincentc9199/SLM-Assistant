@@ -3,25 +3,53 @@
 {% block title %}Additional Patterns - SLM Assistant{% endblock %}
 
 {% block content %}
-    <h1>Additional Patterns</h1>
-    <nav>
-        <ul>
-            <li><a href="{{ url_for('input_additional') }}">Input Additional Patterns</a></li>
-            <li><a href="{{ url_for('save_add_phase') }}">Save Additional Patterns</a></li>
-            <li><a href="{{ url_for('use_add_phase') }}">Load from File</a></li>
-        </ul>
-    </nav>
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('additional_pattern') }}">Additional Hub</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('input_additional') }}">Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('correction') }}">Manufacturer Correction</a></li>
+    </ul>
+</div>
 
-    <h2>Reset Additional Phase Patterns</h2>
-    <form action="{{ url_for('reset_additional_phase') }}" method="POST">
-        <input type="submit" value="Reset Additional Patterns">
-    </form>
-    
-    <h2>Reset Aperture</h2>
-    <form action="{{ url_for('reset_aperture') }}" method="POST">
-        <input type="submit" value="Reset Aperture">
-    </form>
 
-    {% block get_additional %}{% endblock %}
+<div class="container-fluid p-2">
+    <div class="row">
+        <div class="col-sm-4">
+            <form action="{{ url_for('reset_additional_phase') }}" method="POST">
+                <div class="d-grid m-2">
+                    <button type="submit" class="btn btn-outline-primary">Reset Additional Phase</button>
+                </div>
+            </form>
+            <form action="{{ url_for('reset_aperture') }}" method="POST">
+                <div class="d-grid m-2">
+                    <button type="submit" class="btn btn-outline-primary">Reset Aperture</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-8">
+            <form action="{{ url_for('use_add_phase') }}" method="POST" enctype="multipart/form-data">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="file" id="fname" name="fname">
+                    <button type="submit" class="btn btn-outline-primary">Upload Additional Phase</button>
+                </div>
+            </form>
+
+            <form action="{{ url_for('add_pattern_to_add_phase') }}" method="POST" enctype="multipart/form-data">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="file" id="path" name="path">
+                    <button type="submit" class="btn btn-outline-primary">More Without Erasing</button>
+                </div>
+            </form>
+
+            <form action="{{ url_for('save_add_phase') }}" method="POST">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                    <button class="btn btn-outline-primary" type="submit">Save Additional Phase</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
 
 {% endblock %}

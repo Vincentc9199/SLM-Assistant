@@ -1,25 +1,31 @@
-{% extends "setup.html" %}
+{% extends "base.html" %}
 
-{% block setup %}
-    <h1>Setup SLM</h1>
+{% block title %}Setup SLM - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('use_slm_amp') }}">Setup SLM Amplitude</a></li>
+    </ul>
+</div>
+
+<div class="container p-2">
     <form method="POST">
-        <label for="display_num">Display Number:</label>
-        <input type="number" id="display_num" name="display_num">
-
-        <label for="bitdepth">Bit Depth:</label>
-        <input type="number" id="bitdepth" name="bitdepth">
-
-        <label for="wav_design_um">Wave Design (um):</label>
-        <input type="number" id="wav_design_um" name="wav_design_um" step="0.001">
-
-        <label for="wav_um">Wave (um):</label>
-        <input type="number" id="wav_um" name="wav_um" step="0.001">
-        
-        <button type="submit">Submit SLM Setttings</button>
+        <div class="input-group mb-3">
+            <input type="number" id="display_num" name="display_num" class="form-control" placeholder="Display Number">
+            <input type="number" id="bitdepth" name="bitdepth" class="form-control" placeholder="Bitdepth">
+            <input type="number" id="wav_design_um" name="wav_design_um" step="0.001" class="form-control" placeholder="Design Wavelength (um)">
+            <input type="number" id="wav_um" name="wav_um" step="0.001" class="form-control" placeholder="Laser Wavelength (um)">
+            <button type="submit" class="btn btn-outline-primary">Submit SLM Setttings</button>
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('setup_virtual') }}">Virtual SLM</a></li>
+            </ul>
+        </div>
     </form>
-    <br>
-    <h2>Setup Virtual SLM</h2>
-    <form action="{{ url_for('setup_virtual') }}" method="POST">
-        <input type="submit" value="Setup Virtual SLM">
-    </form>
+</div>
 {% endblock %}

@@ -1,66 +1,96 @@
-{% extends 'additional_pattern.html' %}
+{% extends 'base.html' %}
 
-{% block get_additional %}
-    <h2>Input Additional Patterns</h2>
+{% block title %}Input Additional - SLM Assistant{% endblock %}
 
-    <h3>Fresnel Lens</h3>
-    <form action="{{ url_for('add_fresnel_lens') }}" method="POST">
-        <label for="focal_length">Focal Length:</label>
-        <input type="text" id="focal_length" name="focal_length"><br><br>
-        <button type="submit">Add Fresnel Lens</button>
-    </form>
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('additional_pattern') }}">Additional Hub</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('input_additional') }}">Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('correction') }}">Manufacturer Correction</a></li>
+    </ul>
+</div>
 
-    <h3>Offset</h3>
-    <form action="{{ url_for('add_offset') }}" method="POST">
-        <label for="offset_x">X:</label>
-        <input type="number" id="offset_x" name="offset_x" required><br><br>
-        <label for="offset_x">Y:</label>
-        <input type="number" id="offset_y" name="offset_y" required><br><br>
-        <button type="submit">Add Offset</button>
-    </form>
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link text-body active" data-bs-toggle="tab" href="#fresnel">Fresnel Lens</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-body" data-bs-toggle="tab" href="#offset">Offset</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-body" data-bs-toggle="tab" href="#zernike">Zernike Polynomials</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-body" data-bs-toggle="tab" href="#aperture">Aperture</a>
+          </li>
+    </ul>
+</div>
 
-    <h3>Zernike Polynomials</h3>
-    <h3>Enter Zernike Polynomial Coefficients</h3>
-    <form action="{{ url_for('add_zernike_poly') }}" method="post">
-        <div id="zernike-inputs">
-            <div class="form-group">
-                <label for="n0">n:</label>
-                <input type="number" id="n0" name="n0" required>
-                <label for="m0">m:</label>
-                <input type="number" id="m0" name="m0" required>
-                <label for="weight0">Weight:</label>
-                <input type="number" id="weight0" name="weight0" step="any" required>
+<div class="tab-content">
+    <div id="fresnel" class="container tab-pane active"><br>
+        <h5>Fresnel Lens</h5>
+        <form action="{{ url_for('add_fresnel_lens') }}" method="POST">
+            <div class="input-group mb-3">
+                <input class="form-control" type="number" id="focal_length" name="focal_length" step="0.001" placeholder="Focal Length">
+                <button class="btn btn-outline-primary" type="submit">Add Fresnel Lens</button>
             </div>
-        </div>
-        <button type="button" onclick="addZernikeInput()">Add Another Polynomial</button>
-        <br>
-        <button type="submit" class="button">Add Zernike Polynomials</button>
-    </form>
+        </form>
+    </div>
+    <div id="offset" class="container tab-pane"><br>
+        <h5>Offset</h5>
+        <form action="{{ url_for('add_offset') }}" method="POST">
+            <div class="input-group mb-3">
+                <input class="form-control" type="number" id="offset_x" name="offset_x" step="0.001" placeholder="X">
+                <input class="form-control" type="number" id="offset_y" name="offset_y" step="0.001" placeholder="Y">
+                <button class="btn btn-outline-primary" type="submit">Add Offset</button>
+            </div>
+        </form>
+    </div>
+    <div id="zernike" class="container tab-pane"><br>
+        <h5>Zernike Polynomials</h5>
+        <form action="{{ url_for('add_zernike_poly') }}" method="post">
+            <div id="zernike-inputs">
+                <div class="form-group">
+                    <div class="input-group mb-3">
+                        <input class="form-control" type="number" id="n0" name="n0" placeholder="n:">
+                        <input class="form-control" type="number" id="m0" name="m0" placeholder="m:">
+                        <input class="form-control" type="number" id="weight0" name="weight0" step="any" placeholder="weight:">
+                        <button class="btn btn-outline-secondary" type="button" onclick="addZernikeInput()">Add Polynomial</button>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Add Zernikes</button>
+        </form>
+    </div>
+    <div id="aperture" class="container tab-pane"><br>
+        <h5>Aperture</h5>
+        <form action="{{ url_for('use_aperture') }}" method="POST">
+            <div class="input-group mb-3">
+                <input class="form-control" type="number" step="any" id="aperture_size" name="aperture_size" placeholder="Size">
+                <button class="btn btn-outline-primary" type="submit">Add Aperture</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-    <h3>Aperture</h3>
-    <form action="{{ url_for('use_aperture') }}" method="POST">
-        <label for="aperture_size">Aperture Size:</label>
-        <input type="number" id="aperture_size" name="aperture_size" required><br><br>
-        <button type="submit">Add Aperture</button>
-    </form>
+<script>
+    let inputCount = 1;
 
-    <script>
-        let inputCount = 1;
-
-        function addZernikeInput() {
-            const container = document.getElementById('zernike-inputs');
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.innerHTML = `
-                <label for="n${inputCount}">n:</label>
-                <input type="number" id="n${inputCount}" name="n${inputCount}" required>
-                <label for="m${inputCount}">m:</label>
-                <input type="number" id="m${inputCount}" name="m${inputCount}" required>
-                <label for="weight${inputCount}">Weight:</label>
-                <input type="number" id="weight${inputCount}" name="weight${inputCount}" step="any" required>
-            `;
-            container.appendChild(div);
-            inputCount++;
-        }
-    </script>
+    function addZernikeInput() {
+        const container = document.getElementById('zernike-inputs');
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        div.innerHTML = `
+            <div class="input-group mb-3">
+                <input class="form-control" type="number" id="n${inputCount}" name="n${inputCount}" placeholder="n:">
+                <input class="form-control" type="number" id="m${inputCount}" name="m${inputCount}" placeholder="m:">
+                <input class="form-control" type="number" id="weight${inputCount}" name="weight${inputCount}" step="any" placeholder="weight:">
+            </div>
+        `;
+        container.appendChild(div);
+        inputCount++;
+    }
+</script>
 {% endblock %}

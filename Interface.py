@@ -6,9 +6,10 @@ import slmsuite.hardware.cameraslms
 import slmsuite.holography.algorithms
 import slmsuite.holography.toolbox
 import slmsuite.holography.toolbox.phase
-import matplotlib
-matplotlib.use('Agg')  # Use the 'Agg' backend
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+mpl.use('Agg')  # Use the 'Agg' backend
+mpl.rc('image', cmap='Blues')
 
 # This class acts as an interface between the server and the slmsuite library
 
@@ -220,7 +221,7 @@ class SLMSuiteInterface:
         """
         if self.hologram is not None:
             if (amp is None) and (phase is None):
-                self.hologram.plot_nearfield()
+                self.hologram.plot_nearfield(cbar=True)
                 return 0
             elif (amp is None) and (phase is not None):
                 amp = self.hologram.amp
@@ -274,10 +275,10 @@ class SLMSuiteInterface:
         """
         if self.hologram is not None:
             if (amp is None) and (phase is None):
-                self.hologram.plot_farfield()
+                self.hologram.plot_farfield(cbar=True)
             else:
                 farfield,_ = self.get_farfield(amp, phase)
-                self.hologram.plot_farfield(farfield)
+                self.hologram.plot_farfield(farfield, cbar=True)
             return 0
         else:
             return -1

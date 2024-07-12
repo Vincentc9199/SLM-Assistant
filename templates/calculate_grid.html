@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
+{% block title %}Grid - SLM Assistant{% endblock %}
+
 {% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('calculate_grid') }}">Grid</a></li>
+    </ul>
+</div>
+
 <h2>Calculate: Grid</h2>
 
 <div class="input-container">

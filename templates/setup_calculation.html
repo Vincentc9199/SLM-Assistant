@@ -1,17 +1,49 @@
-{% extends "setup.html" %}
+{% extends "base.html" %}
 
-{% block setup %}
-    <h1>Setup Calculation Settings</h1>
+{% block title %}Setup Calculation - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('use_slm_amp') }}">Setup SLM Amplitude</a></li>
+    </ul>
+</div>
+
+<div class="container p-2">
     <form method="POST">
-        <label for="pattern_path">File Path Containing Phase Patterns:</label>
-        <input type="text" id="pattern_path" name="pattern_path">
-        
-        <label for="computational_space">Size of Computational Space:</label>
-        <input type="number" id="computational_space" name="computational_space">
-        
-        <label for="n_iterations">Number of Iterations for GS algorithm:</label>
-        <input type="number" id="n_iterations" name="n_iterations">
-        
-        <button type="submit">Submit Calculation Settings</button>
+        <div class="input-group mb-3">
+            <input type="text" id="main_path" name="main_path" class="form-control" placeholder="File Path for Loading">
+            <input type="number" id="computational_space" name="computational_space" class="form-control" placeholder="Size of Computational Space">
+            <input type="number" id="n_iterations" name="n_iterations" class="form-control" placeholder="Default # of Iterations for GS">
+            <button type="submit" class="btn btn-outline-primary">Submit Calculation Settings</button>
+        </div>
     </form>
+</div>
+
+<div class="container p-2">
+    <form action="{{ url_for('setup_calibration') }}" method="POST">
+        <div class="row">
+            <div class="form-group col-6">
+                <input type="number" id="top_left" name="top_left" class="form-control" step="0.0001">
+            </div>
+            <div class="form-group col-6">
+                <input type="number" id="top_right" name="top_right" class="form-control" step="0.0001">
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group col-6">
+                <input type="number" id="bottom_left" name="bottom_left" class="form-control" step="0.0001">
+            </div>
+            <div class="form-group col-6">
+                <input type="number" id="bottom_right" name="bottom_right" class="form-control" step="0.0001">
+            </div>
+        </div>
+        
+        <input type="number" id="vector_x" name="vector_x" class="form-control" step="0.0001">
+        <input type="number" id="vector_y" name="vector_y" class="form-control" step="0.0001">
+        <button type="submit" class="btn btn-outline-primary">Submit Calibration Settings</button>
+    </form>
+</div>
 {% endblock %}

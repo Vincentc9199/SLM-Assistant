@@ -62,8 +62,9 @@ class PhaseManager(object):
     def add_offset(self, offset_data):
         phase = slmsuite.holography.toolbox.phase.blaze(self.slm, vector = offset_data)
         self.additional = self.additional + phase
-        self.add_log.append(["offset", str(offset_data)])
-
+        offset_string = "[" + str(offset_data[0]) + ", " + str(offset_data[1]) + "]"
+        self.add_log.append(["offset", offset_string])
+        
     def save_to_file(self, save_options, extra_info=None):
         full_path, full_path2 = utils.save_add_phase(self, save_options, extra_info)
         return full_path, full_path2

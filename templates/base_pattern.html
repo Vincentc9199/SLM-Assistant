@@ -1,44 +1,69 @@
 {% extends 'base.html' %}
 
-{% block title %}Base Pattern - SLM Assistant{% endblock %}
+{% block title %}Base Pattern Hub - SLM Assistant{% endblock %}
 
 {% block content %}
-    <h1>Base Pattern</h1>
-    <nav>
-        <ul>
-            <li><a href="{{ url_for('calculate') }}">Calculate: Input Coordinates</a></li>
-            <li><a href="{{ url_for('calculate_grid') }}">Calculate: Grid</a></li>
-        </ul>
-    </nav>
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body disabled" href="{{ url_for('calculate_grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
+    </ul>
+</div>
 
-    <h2>Load Base Pattern from File</h2>
-
-    <form action="{{ url_for('use_pattern') }}" method="POST" enctype="multipart/form-data">
-        <label for="fname">File Name:</label>
-        <input type="file" id="fname" name="fname"><br><br>
-        <input type="submit" value="Upload">
-    </form>
-
-    <h2>Reset Base Phase Patterns</h2>
-    <form action="{{ url_for('reset_pattern') }}" method="POST">
-        <input type="submit" value="Reset Base Pattern">
-    </form>
-
-    <h2>History of Loaded Base Patterns</h2>
-    {% if base_load_history %}
-        
-        <table>
-            <tr>
-                <th>File Name</th>
-                <th>Date and Time</th>
-            </tr>
-            {% for entry in base_load_history %}
-                <tr>
-                    <td>{{ entry.fname }}</td>
-                    <td>{{ entry.upload_time }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
-
+<div class="container-fluid p-2">
+    <div class="row">
+        <div class="col-sm-4">
+            <form action="{{ url_for('use_pattern') }}" method="POST" enctype="multipart/form-data">
+                <div class="input-group mb-2">
+                    <input class="form-control" type="file" id="fname" name="fname">
+                    <button type="submit" class="btn btn-outline-primary">Upload Base Pattern</button>
+                </div>
+            </form>
+            <form action="{{ url_for('reset_pattern') }}" method="POST">
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">Reset Base Pattern</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-8">
+            <table class="table table-bordered table-hover text-center">
+                <thead class="align-middle">
+                    <tr>
+                        <th>File Path</th>
+                        <th>Computational Space</th>
+                        <th>Number of Iterations</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    <tr>
+                        <td>{{ main_path }}</td>
+                        <td>{{ computational_space }}</td>
+                        <td>{{ n_iterations }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if base_load_history %}
+            <h5>History of Loaded Base Patterns</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in base_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}
