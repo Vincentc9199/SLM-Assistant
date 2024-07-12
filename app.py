@@ -22,7 +22,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
-window = pyglet.window.Window(visible=True)
+#window = pyglet.window.Window(visible=True)
 
 def start_flask_app():
     socketio.run(app, port=8080, debug=False)
@@ -999,9 +999,16 @@ def save_config():
 
 
 if __name__ == '__main__':
-    flask_thread = threading.Thread(target=start_flask_app, daemon=True)
+    flask_thread = threading.Thread(target=start_flask_app)
+    flask_thread.daemon = True
     flask_thread.start()
-    start_pyglet_app()
+
+    pyglet_thread = threading.Thread(target=start_pyglet_app)
+    pyglet_thread.daemon = True
+    pyglet_thread.start()
+
+    flask_thread.join()
+    pyglet_thread.join()
     
 
 """
