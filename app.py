@@ -1013,9 +1013,6 @@ if __name__ == '__main__':
     flask_thread.daemon = True
     flask_thread.start()
 
-    # Wait for Flask app to initialize and then start the Pyglet app
-    print("Sleeping to allow Flask to start...")
-    threading.Event().wait(5)  # Adjust the wait time if needed
     start_pyglet_app()
     
 
