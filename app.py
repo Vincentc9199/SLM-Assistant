@@ -28,8 +28,10 @@ def start_flask_app():
     socketio.run(app, port=8080, debug=False)
 
 def start_pyglet_app():
-    pyglet.app.run()
-    pyglet.app.platform_event_loop()
+    while True:
+        pyglet.app.platform_event_loop().process_events()
+        pyglet.clock.tick()
+        pyglet.app.platform_event_loop().dispatch_event()
     
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
