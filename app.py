@@ -22,7 +22,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
-#window = pyglet.window.Window(visible=True)
+window = pyglet.window.Window(visible=True)
 
 def start_flask_app():
     socketio.run(app, port=8080, debug=False)
