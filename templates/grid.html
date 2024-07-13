@@ -16,13 +16,13 @@
 <h1>Select Points</h1>
     <div class="center-coords">
         <label for="center1">Center Coordinate 1 (Y):</label>
-        <input type="number" id="center1" value="500">
+        <input type="number" id="center1" value="0">
         <label for="center2">Center Coordinate 2 (X):</label>
-        <input type="number" id="center2" value="500">
+        <input type="number" id="center2" value="0">
         <label for="gridSize">Grid Size:</label>
         <input type="number" id="gridSize" value="50">
     </div>
-    <canvas class="border" id="pointCanvas" width="1000" height="1000"></canvas>
+    <canvas class="border" id="pointCanvas" width="500" height="500"></canvas>
     <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
     <form id="pointsForm" method="POST" action="/submit_points">
         <div class="points-list">
