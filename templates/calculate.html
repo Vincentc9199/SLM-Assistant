@@ -8,6 +8,7 @@
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
         <li class="nav-item"><a class="nav-link active" href="{{ url_for('calculate') }}">Manual Input</a></li>
         <li class="nav-item"><a class="nav-link text-body disabled" href="{{ url_for('calculate_grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
@@ -55,7 +56,7 @@
     <div class="row p-2">
         <div class="input-group">
             <span class="input-group-text" id="basic-addon1">Initial Guess</span>
-            <input class="form-control" type="file" id="guess_name" name="guess_name" placeholder="Initial Guess">
+            <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
         </div>
     </div>
     <div class="form-check form-switch m-2">

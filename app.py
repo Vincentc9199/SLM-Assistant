@@ -26,9 +26,9 @@ def start_flask_app():
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
 def start_pyglet_app():
-    initial_window = pyglet.window.Window(visible=True)
-    event_logger = pyglet.window.event.WindowEventLogger()
-    initial_window.push_handlers(event_logger)
+    #initial_window = pyglet.window.Window(visible=True)
+    #event_logger = pyglet.window.event.WindowEventLogger()
+    #initial_window.push_handlers(event_logger)
     pyglet.app.run()
     
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
@@ -113,8 +113,6 @@ def on_create_slm():
                             setup_slm_settings['bitdepth'], 
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
-
-    slm.window.on_draw()
 
     phase_mgr = PhaseManager.PhaseManager(slm)
     wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
@@ -372,73 +370,75 @@ def calculate():
     global n_iterations, computational_space, main_path
     global slm_list, slm_num
 
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
+    if request.method == 'POST':
+        
+        # Get list of target x and y coordinates input by user
+        x_coords = request.form.getlist('x_coords')
+        y_coords = request.form.getlist('y_coords')
+        amplitudes = request.form.getlist('amplitudes')
+        iteration_number = request.form['iteration_number']
+        camera = request.form['camera']
+        # Get initial guess file path from user
+        guess_name = request.form['guess_name']
+        save_name = request.form['save_name']
 
-        if request.method == 'POST':
-            
-            # Get list of target x and y coordinates input by user
-            x_coords = request.form.getlist('x_coords')
-            y_coords = request.form.getlist('y_coords')
-            # Convert coordinates to integers
-            x_coords = list(map(float, x_coords))
-            y_coords = list(map(float, y_coords))
-            # Create 2D numpy array containing x,y coords
-            targets = np.array([x_coords, y_coords])
-
-            camera = str(request.form['camera'])
-            if camera == "yes":
-                targets = andor_to_k(targets)
-
-            print("Targets:" + str(targets))
-            # Get list of target amplitudes
-            amplitudes = request.form.getlist('amplitudes')
-            # Convert amplitudes to floats
-            amplitudes = list(map(float, amplitudes))
-            # Create 1D numpy array containing amplitudes
-            amp_data = np.array(amplitudes)
-            
-            # Get number of iterations from user
-            iteration_number = request.form['iteration_number']
-            # If user specified nothing, set to default
-            if not iteration_number:
-                iteration_number = n_iterations
-            
-            # Initialize guess phase
-            guess_phase = None
-            # Get initial guess file path from user
-            guess_name = request.form['guess_name']
-            guess_name = guess_name[:-11]
-            # If there is a guess file path
-            if guess_name:
-                # Add the pattern folder path
-                guess_path = main_path + "base/" + guess_name
-                # Extract guess phase pattern
-                _,data = utils.load_slm_calculation(guess_path, 1, 1)
-                # Check if data was in the file
-                if "raw_slm_phase" in data:
-                    # Store guess phase pattern
-                    guess_phase = data["raw_slm_phase"]
-                    print("Stored initial guess phase pattern")
-                else:
-                    print ("Cannot initiate the guess phase, since it was not saved")
-
-            iface = current_slm_settings['iface']
-            # Calculate the base pattern to create the target using GS or WGS algo 
-            iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
-
-            iface.plot_slmplane()
-            iface.plot_farfield()
-            iface.plot_stats()
-
-            save_name = request.form['save_name']
-
-            new_pattern_path = save_calculation(save_name)
-            load_base(new_pattern_path)
-
-            return redirect(url_for('calculate'))
+        calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
+        return redirect(url_for('calculate'))
     
     return render_template('calculate.html')
+
+def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name):
+    global n_iterations, computational_space, main_path
+    global slm_list, slm_num
+    if slm_num is not None:
+        current_slm_settings = slm_list[slm_num]
+        # Convert coordinates to integers
+        x_coords = list(map(float, x_coords))
+        y_coords = list(map(float, y_coords))
+        # Create 2D numpy array containing x,y coords
+        targets = np.array([x_coords, y_coords])
+
+        if camera == "yes":
+            targets = andor_to_k(targets)
+
+        print("Targets:" + str(targets))
+        
+        # Convert amplitudes to floats
+        amplitudes = list(map(float, amplitudes))
+        # Create 1D numpy array containing amplitudes
+        amp_data = np.array(amplitudes)
+        
+        # If user specified nothing, set to default
+        if not iteration_number:
+            iteration_number = n_iterations
+        
+        # Initialize guess phase
+        guess_phase = None
+        guess_name = guess_name[:-11]
+        # If there is a guess file path
+        if guess_name:
+            # Add the pattern folder path
+            guess_path = main_path + "base/" + guess_name
+            # Extract guess phase pattern
+            _,data = utils.load_slm_calculation(guess_path, 1, 1)
+            # Check if data was in the file
+            if "raw_slm_phase" in data:
+                # Store guess phase pattern
+                guess_phase = data["raw_slm_phase"]
+                print("Stored initial guess phase pattern")
+            else:
+                print ("Cannot initiate the guess phase, since it was not saved")
+
+        iface = current_slm_settings['iface']
+        # Calculate the base pattern to create the target using GS or WGS algo 
+        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
+
+        iface.plot_slmplane()
+        iface.plot_farfield()
+        iface.plot_stats()
+
+        new_pattern_path = save_calculation(save_name)
+        load_base(new_pattern_path)
 
 def andor_to_k(x):
     global A, b
@@ -451,9 +451,9 @@ def k_to_andor(k):
     targets = np.matmul(invA, k - b)
     return targets
 
-@app.route('/grid')
-def grid():
-    return render_template('grid.html')
+@app.route('/canvas')
+def canvas():
+    return render_template('canvas.html')
 
 @app.route('/submit_points', methods=['POST'])
 def submit_points():
@@ -461,10 +461,11 @@ def submit_points():
     x_coords = data['xCoords']
     y_coords = data['yCoords']
     amplitudes = data['amplitudes']
-    # Process the data as needed
-    print(x_coords)
-    print(y_coords)
-    print(amplitudes)
+    iteration_number = data['iteration_number']
+    camera = data['camera']
+    guess_name = data['guess_name']
+    save_name = data['save_name']
+    calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
     return jsonify({'status': 'success'})
 
 @app.route('/calculate_grid', methods=['GET', 'POST'])
@@ -576,8 +577,9 @@ def use_pattern():
     if request.method == 'POST':
 
         # Get the file name input by the user
-        file = request.files['fname']
-        fname = file.filename[:-9]
+        #file = request.files['fname']
+        #fname = file.filename[:-9]
+        fname = request.form['fname'][:-9]
         print("Received " + fname)
 
         # Add the pattern path (if it is just a file name)
@@ -629,7 +631,8 @@ def reset_pattern():
 def targets():
     global main_path, target_path, target_plot_flag
     if request.method == "POST":
-        fname = request.files['fname'].filename
+        #fname = request.files['fname'].filename
+        fname = request.form['fname']
         target_path = main_path + "base/" + fname
 
         target_plot_flag = 1
@@ -778,8 +781,9 @@ def use_add_phase():
 
         if request.method == 'POST':
             # Get file name input by user
-            file = request.files['fname']
-            fname = file.filename[:-19]
+            #file = request.files['fname']
+            #fname = file.filename[:-19]
+            fname = request.form['fname'][:-19]
             print("Received for add phase: " + fname)
 
             # Add pattern path if its just a file name
@@ -803,8 +807,9 @@ def add_pattern_to_add_phase():
         if request.method == 'POST':
 
             # Get file path for additional phase from user
-            file = request.files['path']
-            fname = file.filename[:-19]
+            #file = request.files['path']
+            #fname = file.filename[:-19]
+            fname = request.form['path'][:-19]
             print("Received " + path)
 
             # Add pattern path if its not global
@@ -858,8 +863,9 @@ def correction():
 
         if request.method == 'POST':
             # Get correction file name from user
-            file = request.files['fname']
-            fname = file.filename
+            #file = request.files['fname']
+            #fname = file.filename
+            fname = request.form['fname']
             print("Received correction pattern: " + fname)
 
             path = main_path + "manufacturer/" + fname
@@ -893,8 +899,8 @@ def load_config():
         current_slm_settings = slm_list[slm_num]
         phase_mgr = current_slm_settings['phase_mgr']
         if request.method == 'POST':
-            filename = request.files['filename'].filename
-
+            #filename = request.files['filename'].filename
+            filename = request.form['filename']
             filepath = main_path + "config/" + filename
 
             with open(filepath, 'r') as fhdl:

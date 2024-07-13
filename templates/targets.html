@@ -8,14 +8,15 @@
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
         <li class="nav-item"><a class="nav-link text-body disabled" href="{{ url_for('calculate_grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
         <li class="nav-item"><a class="nav-link active" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
 
 <div class="container-fluid p-2">
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST">
         <div class="input-group mb-2">
-            <input class="form-control" type="file" id="fname" name="fname">
+            <input class="form-control" type="text" id="fname" name="fname">
             <button type="submit" class="btn btn-outline-primary">Plot Targets</button>
         </div>
     </form>

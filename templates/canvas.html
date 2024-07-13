@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Canvas - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body disabled" href="{{ url_for('calculate_grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
+    </ul>
+</div>
+
+
+<h1>Select Points</h1>
+<canvas class="border" id="pointCanvas" width="1024" height="1024"></canvas>
+<p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+<form id="pointsForm" method="POST" action="/submit_points">
+    <div class="points-list">
+        <h2>Selected Points</h2>
+        <ul id="pointsList"></ul>
+    </div>
+    <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+    <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+    <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+    <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
+    <button type="button" onclick="submitPoints()">Submit Points</button>
+</form>
+<script>
+    const canvas = document.getElementById('pointCanvas');
+    const ctx = canvas.getContext('2d');
+    const hoverCoordinates = document.getElementById('hoverCoordinates');
+    const pointsList = document.getElementById('pointsList');
+
+    let points = [];
+    let xCoords = [];
+    let yCoords = [];
+    let amplitudes = [];
+
+    // Update hover coordinates
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        hoverCoordinates.textContent = `Hover coordinates: (${x}, ${y})`;
+    });
+
+    // Select points
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        points.push({x, y, amplitude: 1}); // Default amplitude is 1
+        updatePointsList();
+        drawPoint(x, y);
+    });
+
+    // Draw a point on the canvas
+    function drawPoint(x, y) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Update the points list display
+    function updatePointsList() {
+        pointsList.innerHTML = '';
+        points.forEach((point, index) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+            pointsList.appendChild(listItem);
+        });
+    }
+
+    // Update amplitude for a point
+    function updateAmplitude(index, value) {
+        points[index].amplitude = value;
+    }
+
+    // Submit points to the server
+    function submitPoints() {
+        xCoords = points.map(p => p.x);
+        yCoords = points.map(p => p.y);
+        amplitudes = points.map(p => p.amplitude);
+        
+        iteration_number = document.getElementById('iteration_number').value;
+        guess_name = document.getElementById('guess_name').value;
+        save_name = document.getElementById('save_name').value;
+        camera = document.getElementById('camera').value;
+
+        fetch('/submit_points', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({xCoords, yCoords, amplitudes, iteration_number, guess_name, save_name, camera}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+{% endblock %}
+<!--
+        <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+        <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+        <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+        <input class="form-check-input" type="checkbox" id="camera" name="camera" value="yes">
+        <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
+        <input type="hidden" name="camera" value="no">
+        -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Points</title>
+    <style>
+        canvas { border: 1px solid black; }
+        .points-list { margin-top: 10px; }
+        .center-coords { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Select Points</h1>
+    <div class="center-coords">
+        <label for="centerX">Center X:</label>
+        <input type="number" id="centerX" value="250">
+        <label for="centerY">Center Y:</label>
+        <input type="number" id="centerY" value="250">
+    </div>
+    <canvas id="pointCanvas" width="500" height="500"></canvas>
+    <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+    <form id="pointsForm" method="POST" action="/submit_points">
+        <div class="points-list">
+            <h2>Selected Points</h2>
+            <ul id="pointsList"></ul>
+        </div>
+        <button type="button" onclick="submitPoints()">Submit Points</button>
+    </form>
+    <script>
+        const canvas = document.getElementById('pointCanvas');
+        const ctx = canvas.getContext('2d');
+        const hoverCoordinates = document.getElementById('hoverCoordinates');
+        const pointsList = document.getElementById('pointsList');
+        const centerXInput = document.getElementById('centerX');
+        const centerYInput = document.getElementById('centerY');
+
+        let points = [];
+        let xCoords = [];
+        let yCoords = [];
+        let amplitudes = [];
+
+        // Update hover coordinates
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.bottom;
+            const centerX = parseInt(centerXInput.value, 10);
+            const centerY = parseInt(centerYInput.value, 10);
+            const adjustedX = x - centerX;
+            const adjustedY = y - centerY; // Invert y-coordinate
+            hoverCoordinates.textContent = `Hover coordinates: (${adjustedX}, ${adjustedY})`;
+        });
+
+        // Select points
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.bottom;
+            const centerX = parseInt(centerXInput.value, 10);
+            const centerY = parseInt(centerYInput.value, 10);
+            const adjustedX = x - centerX;
+            const adjustedY = y - centerY; // Invert y-coordinate
+            points.push({x: adjustedX, y: adjustedY, amplitude: 1}); // Default amplitude is 1
+            updatePointsList();
+            drawPoint(x, y);
+        });
+
+        // Draw a point on the canvas
+        function drawPoint(x, y) {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Update the points list display
+        function updatePointsList() {
+            pointsList.innerHTML = '';
+            points.forEach((point, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+                pointsList.appendChild(listItem);
+            });
+        }
+
+        // Update amplitude for a point
+        function updateAmplitude(index, value) {
+            points[index].amplitude = value;
+        }
+
+        // Submit points to the server
+        function submitPoints() {
+            xCoords = points.map(p => p.x);
+            yCoords = points.map(p => p.y);
+            amplitudes = points.map(p => p.amplitude);
+
+            fetch('/submit_points', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({xCoords, yCoords, amplitudes}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
+-->
