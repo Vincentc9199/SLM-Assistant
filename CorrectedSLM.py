@@ -71,7 +71,7 @@ class CorrectedSLM(SLM):
         # self.slm.write(None)
 
     @staticmethod
-    def info(verbose=True):
+    def info(self, verbose=True):
         """
         Discovers all SLMs detected by an SDK.
         Useful for a user to identify the correct serial numbers / etc.

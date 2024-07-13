@@ -23,10 +23,12 @@ app.secret_key = os.urandom(24)
 socketio = SocketIO(app)
 
 def start_flask_app():
-    socketio.run(app, host="0.0.0.0", debug=False)
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
 def start_pyglet_app():
     initial_window = pyglet.window.Window(visible=True)
+    event_logger = pyglet.window.event.WindowEventLogger()
+    initial_window.push_handlers(event_logger)
     pyglet.app.run()
     
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
@@ -111,6 +113,8 @@ def on_create_slm():
                             setup_slm_settings['bitdepth'], 
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
+
+    slm.window.on_draw()
 
     phase_mgr = PhaseManager.PhaseManager(slm)
     wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)

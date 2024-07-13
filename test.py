@@ -1,21 +1,54 @@
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask_socketio import SocketIO
+import os
+import Interface
+from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
+import PhaseManager
+import CorrectedSLM
+#import CameraClient
+#import slmsuite.hardware.cameras.thorlabs
+import utils
+import re
+import numpy as np
+import yaml
+import ast
+import screeninfo
+import mss.tools
+import datetime
 import pyglet
+import threading
 
-class TestEventDispatcher(pyglet.event.EventDispatcher):
-    def test_event(self):
-        print("Dispatching 'test_event'")
-        self.dispatch_event('on_test_event')
+from pyglet.window import key
+from pyglet.window import mouse
 
-TestEventDispatcher.register_event_type('on_test_event')
-dispatcher = TestEventDispatcher()
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
+socketio = SocketIO(app)
 
-@dispatcher.event
-def on_test_event():
-    print("Test event dispatched and handled")
+def start_flask_app():
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
-def run_test():
-    print("Starting pyglet test")
-    pyglet.clock.schedule_once(lambda dt: dispatcher.test_event(), 0)
-    pyglet.app.run()
+window = pyglet.window.Window(visible=True)
 
-if __name__ == '__main__':
-    run_test()
+@window.event
+def on_key_press(symbol, modifiers):
+    if symbol == key.A:
+        print('The "A" key was pressed.')
+    elif symbol == key.LEFT:
+        print('The left arrow key was pressed.')
+    elif symbol == key.ENTER:
+        print('The enter key was pressed.')
+
+event_logger = pyglet.window.event.WindowEventLogger()
+window.push_handlers(event_logger)
+
+@window.event
+def on_draw():
+    window.clear()
+
+event_logger = pyglet.window.event.WindowEventLogger()
+window.push_handlers(event_logger)
+
+pyglet.app.run()
+
+    
