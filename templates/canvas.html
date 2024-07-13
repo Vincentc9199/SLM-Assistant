@@ -7,14 +7,20 @@
     <ul class="nav nav-tabs">
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
-        <li class="nav-item"><a class="nav-link text-body disabled" href="{{ url_for('calculate_grid') }}">Grid</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('canvas') }}">Canvas</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
 
 
 <h1>Select Points</h1>
+<div class="center-coords">
+    <label for="center1">Center Coord 1:</label>
+    <input type="number" id="center1" value="250">
+    <label for="center2">Center Coord 2:</label>
+    <input type="number" id="center2" value="250">
+</div>
 <canvas class="border" id="pointCanvas" width="1024" height="1024"></canvas>
 <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
 <form id="pointsForm" method="POST" action="/submit_points">
@@ -33,6 +39,8 @@
     const ctx = canvas.getContext('2d');
     const hoverCoordinates = document.getElementById('hoverCoordinates');
     const pointsList = document.getElementById('pointsList');
+    const centerCoord1 = document.getElementById('center1');
+    const centerCoord2 = document.getElementById('center2');
 
     let points = [];
     let xCoords = [];
@@ -42,19 +50,21 @@
     // Update hover coordinates
     canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        hoverCoordinates.textContent = `Hover coordinates: (${x}, ${y})`;
+        const coord2 = rect.right - e.clientX - rect.width / 2 + parseFloat(centerCoord2.value);
+        const coord1 = e.clientY - rect.top - rect.height / 2 + parseFloat(centerCoord1.value);
+        hoverCoordinates.textContent = `Hover coordinates: (${coord1}, ${coord2})`;
     });
 
     // Select points
     canvas.addEventListener('click', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        points.push({x, y, amplitude: 1}); // Default amplitude is 1
+        const coord2 = rect.right - e.clientX - rect.width / 2 + parseFloat(centerCoord2.value);
+        const coord1 = e.clientY - rect.top - rect.height / 2 + parseFloat(centerCoord1.value);
+        const draw_coord2 = e.clientX - rect.left;
+        const draw_coord1 = e.clientY - rect.top;
+        points.push({coord1, coord2, amplitude: 1}); // Default amplitude is 1
         updatePointsList();
-        drawPoint(x, y);
+        drawPoint(draw_coord2, draw_coord1);
     });
 
     // Draw a point on the canvas
@@ -70,7 +80,7 @@
         pointsList.innerHTML = '';
         points.forEach((point, index) => {
             const listItem = document.createElement('li');
-            listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+            listItem.innerHTML = `Point (${point.coord1}, ${point.coord2}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
             pointsList.appendChild(listItem);
         });
     }
@@ -82,8 +92,8 @@
 
     // Submit points to the server
     function submitPoints() {
-        xCoords = points.map(p => p.x);
-        yCoords = points.map(p => p.y);
+        xCoords = points.map(p => p.coord1);
+        yCoords = points.map(p => p.coord2);
         amplitudes = points.map(p => p.amplitude);
         
         iteration_number = document.getElementById('iteration_number').value;

@@ -26,7 +26,7 @@ def start_flask_app():
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
 def start_pyglet_app():
-    #initial_window = pyglet.window.Window(visible=True)
+    initial_window = pyglet.window.Window(visible=True)
     #event_logger = pyglet.window.event.WindowEventLogger()
     #initial_window.push_handlers(event_logger)
     pyglet.app.run()
@@ -418,7 +418,7 @@ def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera,
         # If there is a guess file path
         if guess_name:
             # Add the pattern folder path
-            guess_path = main_path + "base/" + guess_name
+            guess_path = main_path + "\\" + guess_name
             # Extract guess phase pattern
             _,data = utils.load_slm_calculation(guess_path, 1, 1)
             # Check if data was in the file
@@ -468,80 +468,23 @@ def submit_points():
     calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
     return jsonify({'status': 'success'})
 
-@app.route('/calculate_grid', methods=['GET', 'POST'])
-def calculate_grid():
-    global n_iterations, computational_space, main_path
-    global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Get JSON data from the user
-            data = request.get_json()
-            print(data)
-            # Extract xCoords and yCoords from the JSON data
-            x_coords = data['xCoords']
-            y_coords = data['yCoords']
-            # Convert to integers
-            x_coords = list(map(int, x_coords))
-            y_coords = list(map(int, y_coords))
-            # Create 2D numpy array containing target x,y coords
-            targets = np.array([x_coords, y_coords])
-            # Scale up to computational space
-            scaling_factor = computational_space[0] / 64
-            targets = targets * scaling_factor
-            print(targets)
-
-            # Get the number of target points
-            num_points = len(x_coords)
-            # Create a 1D numpy array of 1s for target amplitudes
-            #TODO: find a way for the user to specify non-uniform amplitudes
-            amp_data = np.ones(num_points, float)
-
-            # Get number of iterations from user
-            iteration_number = data['iteration_number']
-            # If user specified nothing, set to default
-            if not iteration_number:
-                iteration_number = n_iterations
-
-            # Initialize guess phase
-            guess_phase = None
-            # Get initial guess file path from user
-            guess_path = data['guess_path']
-            # If there is a guess file path
-            if guess_path:
-                # Add the pattern folder path
-                #guess_path = add_pattern_path(guess_path)
-                # Extract guess phase pattern
-                _,data = utils.load_slm_calculation(guess_path, 1, 1)
-                # Check if data was in the file
-                if "raw_slm_phase" in data:
-                    # Store guess phase pattern
-                    guess_phase = data["raw_slm_phase"]
-                    print("Stored initial guess phase pattern")
-                else:
-                    print ("Cannot initiate the guess phase, since it was not saved")
-            
-            iface = current_slm_settings['iface']
-            # Calculate the base pattern to create the target using GS or WGS algo 
-            iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
-
-            # Plot stuff about the calculation, does not work at the moment
-            iface.plot_slmplane()
-            iface.plot_farfield()
-            iface.plot_stats()
-            
-            save_path = str(data['save_path'])
-            save_name = str(data['save_name'])
-            new_pattern_path = save_calculation(save_path, save_name)
-            load_base(new_pattern_path)
-
-            # Response to validate
-            result = {'numPoints': num_points, 'xCoords': x_coords, 'yCoords': y_coords}
-            print(result)
-            return jsonify(result)
+@app.route('/grid', methods=['GET', 'POST'])
+def grid():
+    return render_template('grid.html')
     
-    return render_template('calculate_grid.html')
+@app.route('/submit_points_grid', methods=['POST'])
+def submit_points_grid():
+    data = request.json
+    x_coords = data['xCoords']
+    y_coords = data['yCoords']
+    amplitudes = data['amplitudes']
+    iteration_number = data['iteration_number']
+    camera = data['camera']
+    guess_name = data['guess_name']
+    save_name = data['save_name']
+    calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
+    return jsonify({'status': 'success'})
+    
 
 def save_calculation(save_name):
     global main_path, slm_list, slm_num
@@ -550,7 +493,7 @@ def save_calculation(save_name):
         current_slm_settings = slm_list[slm_num]
 
         # Add pattern path if its not an absolute path
-        save_path = main_path + "base/"
+        save_path = main_path + "base\\"
 
         # Dictionary to store save options
         save_options = dict()
@@ -583,7 +526,7 @@ def use_pattern():
         print("Received " + fname)
 
         # Add the pattern path (if it is just a file name)
-        path = main_path + "base/" + fname
+        path = main_path + "base\\" + fname
 
         load_base(path)
 
@@ -633,7 +576,7 @@ def targets():
     if request.method == "POST":
         #fname = request.files['fname'].filename
         fname = request.form['fname']
-        target_path = main_path + "base/" + fname
+        target_path = main_path + "base\\" + fname
 
         target_plot_flag = 1
         return redirect(url_for('targets'))
@@ -754,7 +697,7 @@ def save_add_phase():
             # Get the file name from user
             save_name = request.form['save_name']
             # Add pattern path if its not an absolute path
-            save_path = main_path + "additional/"
+            save_path = main_path + "additional\\"
             
             # Dictionary containing save options
             save_options = dict()
@@ -787,7 +730,7 @@ def use_add_phase():
             print("Received for add phase: " + fname)
 
             # Add pattern path if its just a file name
-            path = main_path + "additional/" + fname
+            path = main_path + "additional\\" + fname
 
             # Add additional phase pattern to phase manager
             phase_mgr = current_slm_settings['phase_mgr']
@@ -813,7 +756,7 @@ def add_pattern_to_add_phase():
             print("Received " + path)
 
             # Add pattern path if its not global
-            path = main_path + "additional/" + fname
+            path = main_path + "additional\\" + fname
 
             # Add the additional phase pattern
             phase_mgr = current_slm_settings['phase_mgr']
@@ -868,7 +811,7 @@ def correction():
             fname = request.form['fname']
             print("Received correction pattern: " + fname)
 
-            path = main_path + "manufacturer/" + fname
+            path = main_path + "manufacturer\\" + fname
 
             phase_mgr = current_slm_settings['phase_mgr']
             phase_mgr.add_correction(path, current_slm_settings['bitdepth'], 1)
@@ -901,7 +844,7 @@ def load_config():
         if request.method == 'POST':
             #filename = request.files['filename'].filename
             filename = request.form['filename']
-            filepath = main_path + "config/" + filename
+            filepath = main_path + "config\\" + filename
 
             with open(filepath, 'r') as fhdl:
                 config = yaml.load(fhdl, Loader=yaml.FullLoader)
@@ -998,7 +941,7 @@ def save_config():
                     offset_idx += 1
 
             save_name = request.form['save_name']
-            path = main_path + "config/" + save_name
+            path = main_path + "config\\" + save_name
             with open(path, 'x') as fhdl:
                 yaml.dump(config_dict, fhdl)
 

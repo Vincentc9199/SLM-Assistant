@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Grid - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('grid') }}">Grid</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
+    </ul>
+</div>
+
+<h1>Select Points</h1>
+    <div class="center-coords">
+        <label for="center1">Center Coordinate 1 (Y):</label>
+        <input type="number" id="center1" value="500">
+        <label for="center2">Center Coordinate 2 (X):</label>
+        <input type="number" id="center2" value="500">
+        <label for="gridSize">Grid Size:</label>
+        <input type="number" id="gridSize" value="50">
+    </div>
+    <canvas class="border" id="pointCanvas" width="1000" height="1000"></canvas>
+    <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+    <form id="pointsForm" method="POST" action="/submit_points">
+        <div class="points-list">
+            <h2>Selected Points</h2>
+            <ul id="pointsList"></ul>
+        </div>
+        <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+        <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+        <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+        <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
+        <button type="button" onclick="submitPoints()">Submit Points</button>
+    </form>
+    <script>
+        const canvas = document.getElementById('pointCanvas');
+        const ctx = canvas.getContext('2d');
+        const hoverCoordinates = document.getElementById('hoverCoordinates');
+        const pointsList = document.getElementById('pointsList');
+        const centerCoord1 = document.getElementById('center1');
+        const centerCoord2 = document.getElementById('center2');
+        const gridSizeInput = document.getElementById('gridSize');
+
+        let points = [];
+        let xCoords = [];
+        let yCoords = [];
+        let amplitudes = [];
+
+        // Draw grid on the canvas
+        function drawGrid() {
+            const center1 = parseInt(centerCoord1.value, 10);
+            const center2 = parseInt(centerCoord2.value, 10);
+            const gridSize = parseInt(gridSizeInput.value, 10);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+
+            // Draw vertical grid lines (Coordinate 2 axis)
+            for (let x = center2; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let x = center2; x >= 0; x -= gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal grid lines (Coordinate 1 axis)
+            for (let y = center1; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            for (let y = center1; y >= 0; y -= gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+
+            // Redraw points
+            points.forEach(point => {
+                const canvasX = point.x + rect.height / 2 - center1;
+                const canvasY = -point.y + rect.width / 2 - center2;
+                drawPoint(canvasY, canvasX);
+            });
+        }
+
+        // Snap coordinates to the nearest grid intersection
+        function snapToGrid(coord1, coord2) {
+            const gridSize = parseInt(gridSizeInput.value, 10);
+            const snapped1 = Math.round(coord1 / gridSize) * gridSize;
+            const snapped2 = Math.round(coord2 / gridSize) * gridSize;
+            return [snapped1, snapped2];
+        }
+
+        // Update hover coordinates
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const center1 = parseInt(centerCoord1.value, 10);
+            const center2 = parseInt(centerCoord2.value, 10);
+            const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
+            const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
+            const [snapped1, snapped2] = snapToGrid(coord1, coord2);
+            hoverCoordinates.textContent = `Hover coordinates: (${snapped1}, ${snapped2})`;
+        });
+
+        // Select points
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const center1 = parseInt(centerCoord1.value, 10);
+            const center2 = parseInt(centerCoord2.value, 10);
+            const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
+            const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
+            const [snapped1, snapped2] = snapToGrid(coord1, coord2);
+            points.push({x: snapped1, y: snapped2, amplitude: 1}); // Default amplitude is 1
+            updatePointsList();
+            drawGrid(); // Redraw grid and points
+        });
+
+        // Draw a point on the canvas
+        function drawPoint(x, y) {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Update the points list display
+        function updatePointsList() {
+            pointsList.innerHTML = '';
+            points.forEach((point, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+                pointsList.appendChild(listItem);
+            });
+        }
+
+        // Update amplitude for a point
+        function updateAmplitude(index, value) {
+            points[index].amplitude = value;
+        }
+
+        // Submit points to the server
+        function submitPoints() {
+            xCoords = points.map(p => p.x);
+            yCoords = points.map(p => p.y);
+            amplitudes = points.map(p => p.amplitude);
+
+            fetch('/submit_points_grid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({xCoords, yCoords, amplitudes}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Draw initial grid
+        drawGrid();
+
+        // Update grid when center coordinates or grid size change
+        centerCoord1.addEventListener('change', drawGrid);
+        centerCoord2.addEventListener('change', drawGrid);
+        gridSizeInput.addEventListener('change', drawGrid);
+    </script>
+
+
+
+{% endblock %}
+
+
+
+
+<!--
+<h1>Select Points</h1>
+    <div class="center-coords">
+        <label for="center1">Center Coord 1:</label>
+        <input type="number" id="center1" value="250">
+        <label for="center2">Center Coord 2:</label>
+        <input type="number" id="center2" value="250">
+        <label for="gridSize">Grid Size:</label>
+        <input type="number" id="gridSize" value="50">
+    </div>
+    <canvas class="border" id="pointCanvas" width="1000" height="1000"></canvas>
+    <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+    <form id="pointsForm" method="POST" action="/submit_points">
+        <div class="points-list">
+            <h2>Selected Points</h2>
+            <ul id="pointsList"></ul>
+        </div>
+        <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+        <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+        <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+        <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
+        <button type="button" onclick="submitPoints()">Submit Points</button>
+    </form>
+    <script>
+        const canvas = document.getElementById('pointCanvas');
+        const ctx = canvas.getContext('2d');
+        const hoverCoordinates = document.getElementById('hoverCoordinates');
+        const pointsList = document.getElementById('pointsList');
+        const centerCoord1 = document.getElementById('center1');
+        const centerCoord2 = document.getElementById('center2');
+        const gridSizeInput = document.getElementById('gridSize');
+
+        let points = [];
+        let xCoords = [];
+        let yCoords = [];
+        let amplitudes = [];
+
+        // Draw grid on the canvas
+        function drawGrid() {
+            const centerCoord1 = parseInt(centerCoord1.value, 10);
+            const centerCoord2 = parseInt(centerCoord2.value, 10);
+            const gridSize = parseInt(gridSizeInput.value, 10);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+
+            // Draw vertical grid lines
+            for (let x = centerCoord2 % gridSize; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal grid lines
+            for (let y = centerCoord1 % gridSize; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Redraw points
+            points.forEach(point => {
+                const canvasX = centerCoord2 - point.x;
+                const canvasY = centerCoord1 - point.y;
+                drawPoint(canvasX, canvasY);
+            });
+        }
+
+        // Snap coordinates to the nearest grid intersection
+        function snapToGrid(x, y) {
+            const gridSize = parseInt(gridSizeInput.value, 10);
+            const snappedCoord2 = Math.round(x / gridSize) * gridSize;
+            const snappedCoord1 = Math.round(y / gridSize) * gridSize;
+            return [snappedCoord2, snappedCoord1];
+        }
+
+        // Update hover coordinates
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const coord2 = rect.right - e.clientX - rect.width / 2 + parseFloat(centerCoord2.value);
+            const coord1 = e.clientY - rect.top - rect.height / 2 + parseFloat(centerCoord1.value);
+            const [snappedX, snappedY] = snapToGrid(coord1, coord2);
+            hoverCoordinates.textContent = `Hover coordinates: (${snappedX}, ${snappedY})`;
+        });
+
+        // Select points
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const centerCoord1 = parseInt(centerCoord1.value, 10);
+            const centerCoord2 = parseInt(centerCoord2.value, 10);
+            const coord2 = rect.right - e.clientX - rect.width / 2 + parseFloat(centerCoord2.value);
+            const coord1 = e.clientY - rect.top - rect.height / 2 + parseFloat(centerCoord1.value);
+            const [snappedX, snappedY] = snapToGrid(centerCoord2 - x, centerCoord1 - y);
+            points.push({coord1: snappedX, coord2: snappedY, amplitude: 1}); // Default amplitude is 1
+            updatePointsList();
+            drawGrid(); // Redraw grid and points
+        });
+
+        // Draw a point on the canvas
+        function drawPoint(x, y) {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Update the points list display
+        function updatePointsList() {
+            pointsList.innerHTML = '';
+            points.forEach((point, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `Point (${point.coord1}, ${point.coord2}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+                pointsList.appendChild(listItem);
+            });
+        }
+
+        // Update amplitude for a point
+        function updateAmplitude(index, value) {
+            points[index].amplitude = value;
+        }
+
+        // Submit points to the server
+        function submitPoints() {
+            xCoords = points.map(p => p.coord1);
+            yCoords = points.map(p => p.coord2);
+            amplitudes = points.map(p => p.amplitude);
+            iteration_number = document.getElementById('iteration_number').value;
+            guess_name = document.getElementById('guess_name').value;
+            save_name = document.getElementById('save_name').value;
+            camera = document.getElementById('camera').value;
+            fetch('/submit_points_grid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({xCoords, yCoords, amplitudes, iteration_number, guess_name, save_name, camera}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Draw initial grid
+        drawGrid();
+
+        // Update grid when center coordinates or grid size change
+        gridSizeInput.addEventListener('change', drawGrid);
+    </script>
+-->
+
+<!--
+<h2>Calculate: Grid</h2>
+
+<div class="input-container">
+    <label for="iteration_number">Number of Iterations:</label>
+    <input type="number" id="iteration_number" name="iteration_number">
+</div>
+<div class="input-container">
+    <label for="guess_path">Initial Guess File Path:</label>
+    <input type="text" id="guess_path" name="guess_path">
+</div>
+<div class="input-container">
+    <label for="save_path">Save File Path:</label>
+    <input type="text" id="save_path" name="save_path">
+</div>
+<div class="input-container">
+    <label for="save_name">Save Name:</label>
+    <input type="text" id="save_name" name="save_name">
+</div>
+    
+<canvas id="canvas" width="960" height="960" style="border:1px solid #000;"></canvas>
+<div class="button-container">
+    <button onclick="submitPoints()">Start Calculation</button>
+</div>
+
+<h2>Calculation Plots</h2>
+    
+    <img src="{{ url_for('static', filename='images/nearfield.png') }}" class="img-fluid" alt="Nearfield Plot">
+    <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
+    <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+
+<script>
+    var canvas = new fabric.Canvas('canvas');
+    var xCoords = [];
+    var yCoords = [];
+
+    // Create a label to display the coordinates
+    var coordinateLabel = document.createElement('div');
+    coordinateLabel.id = 'coordinateLabel';
+    coordinateLabel.style.position = 'absolute';
+    coordinateLabel.style.padding = '5px';
+    coordinateLabel.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+    coordinateLabel.style.border = '1px solid #ccc';
+    document.body.appendChild(coordinateLabel);
+
+    // Create grid of pixels
+    var numPixels = 64; // Adjust number of pixels as needed
+    var pixelSize = canvas.width / numPixels;
+
+    for (var i = 0; i < numPixels; i++) {
+        for (var j = 0; j < numPixels; j++) {
+            var pixel = new fabric.Rect({
+                left: i * pixelSize,
+                top: j * pixelSize,
+                width: pixelSize,
+                height: pixelSize,
+                fill: 'white',
+                stroke: '#ccc',
+                strokeWidth: 1,
+                selectable: false,
+                hasControls: false,
+                hasBorders: false,
+                hoverCursor: 'pointer'
+            });
+
+            pixel.set('data-x', i);
+            pixel.set('data-y', j);
+
+            canvas.add(pixel);
+
+            pixel.on('mousedown', function(options) {
+                var x = this.get('data-x');
+                var y = this.get('data-y');
+                var index = xCoords.indexOf(x); // Check if x already exists
+
+                if (index === -1) {
+                    // If x does not exist, add new point
+                    xCoords.push(x);
+                    yCoords.push(y);
+                    this.set('fill', 'red');
+                } else {
+                    // If x exists, remove the point
+                    xCoords.splice(index, 1);
+                    yCoords.splice(index, 1);
+                    this.set('fill', 'white');
+                }
+                console.log('xCoords:', xCoords);
+                console.log('yCoords:', yCoords);
+                canvas.renderAll();
+            });
+
+            pixel.on('mousemove', function(options) {
+                var x = this.get('data-x');
+                var y = this.get('data-y');
+                coordinateLabel.innerHTML = `Hovering over: (${x}, ${y})`;
+                var event = options.e;
+                coordinateLabel.style.left = (event.clientX + window.scrollX + 10) + 'px';
+                coordinateLabel.style.top = (event.clientY + window.scrollY + 10) + 'px';
+            });
+        }
+    }
+
+canvas.on('mouse:out', function() {
+    coordinateLabel.innerHTML = ''; // Clear the label when the mouse leaves the canvas
+});
+
+function submitPoints() {
+
+    var iteration_number = document.getElementById('iteration_number').value;
+    var guess_path = document.getElementById('guess_path').value;
+    var save_path = document.getElementById('save_path').value;
+    var save_name = document.getElementById('save_name').value;
+
+    // Prepare data to send
+    var data = {
+            xCoords: xCoords,
+            yCoords: yCoords,
+            iteration_number: iteration_number,
+            guess_path: guess_path,
+            save_path: save_path,
+            save_name: save_name
+        };
+
+    // Send points to backend via AJAX
+    fetch('{{ url_for('calculate_grid') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json' // Set Content-Type header
+        },
+        body: JSON.stringify(data) // Convert data to JSON format
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Points submitted:', data);
+        alert('Points submitted successfully!');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting points.');
+    });
+}
+</script>
+-->
