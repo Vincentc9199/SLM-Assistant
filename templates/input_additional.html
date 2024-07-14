@@ -7,7 +7,6 @@
     <ul class="nav nav-tabs">
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('additional_pattern') }}">Additional Hub</a></li>
         <li class="nav-item"><a class="nav-link active" href="{{ url_for('input_additional') }}">Input</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('correction') }}">Manufacturer Correction</a></li>
     </ul>
 </div>
 
@@ -57,9 +56,11 @@
                         <input class="form-control" type="number" id="n0" name="n0" placeholder="n:">
                         <input class="form-control" type="number" id="m0" name="m0" placeholder="m:">
                         <input class="form-control" type="number" id="weight0" name="weight0" step="any" placeholder="weight:">
-                        <button class="btn btn-outline-secondary" type="button" onclick="addZernikeInput()">Add Polynomial</button>
                     </div>
                 </div>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-outline-secondary" type="button" onclick="addZernikeInput()">Add Polynomial</button>
             </div>
             <button type="submit" class="btn btn-outline-primary">Add Zernikes</button>
         </form>
@@ -87,10 +88,16 @@
                 <input class="form-control" type="number" id="n${inputCount}" name="n${inputCount}" placeholder="n:">
                 <input class="form-control" type="number" id="m${inputCount}" name="m${inputCount}" placeholder="m:">
                 <input class="form-control" type="number" id="weight${inputCount}" name="weight${inputCount}" step="any" placeholder="weight:">
+                <button type="button" class="btn btn-outline-danger" onclick="removePoint(this)">Remove</button>
             </div>
         `;
         container.appendChild(div);
         inputCount++;
+    }
+
+    function removePoint(button) {
+        var pointDiv = button.parentElement;
+        pointDiv.remove();
     }
 </script>
 {% endblock %}

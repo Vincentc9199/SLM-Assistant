@@ -577,13 +577,161 @@ def targets():
     
     return render_template('targets.html')
 
-
-
-
 @app.route('/additional_pattern', methods=['GET', 'POST'])
 def additional_pattern():
+    global additional_load_history
+    return render_template('additional_pattern.html', additional_load_history = additional_load_history)
 
-    return render_template('additional_pattern.html')
+@app.route('/reset_additional_phase', methods=['POST'])
+def reset_additional_phase():
+    global slm_list, slm_num
+    if slm_num is not None and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+        # Reset the additional phase pattern
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.reset_additional()
+        print("Reset Additional Phase")
+
+        return redirect(url_for('additional_pattern'))
+    else:
+        print("No SLM Selected")
+
+    return redirect(url_for('additional_pattern'))
+
+@app.route('/reset_aperture', methods=['POST'])
+def reset_aperture():
+    global slm_list, slm_num
+    if slm_num is not None and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+        # Reset the aperture
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.reset_aperture()
+        print("Aperture Reset")
+
+        return redirect(url_for('additional_pattern'))
+    else:
+        print("No SLM Selected")
+
+    return redirect(url_for('additional_pattern'))
+
+@app.route('/use_add_phase', methods=['GET', 'POST'])
+def use_add_phase():
+    global slm_list, slm_num, main_path, directory, additional_load_history
+    if slm_num is not None and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+
+        # Get file name input by user
+        #file = request.files['fname']
+        #fname = file.filename[:-19]
+        fname = request.form['fname']
+
+        path = os.path.join(directory, 'data', 'additional', fname)
+
+        # Add additional phase pattern to phase manager
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_from_file(path)
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        additional_load_history.append({'fname': path, 'upload_time': upload_time})
+
+        print("Additional Phase Added from:" + path)
+
+        return redirect(url_for('additional_pattern'))
+    else:
+        print("No SLM Selected")
+    return render_template('additional_pattern')
+
+@app.route('/add_pattern_to_add_phase', methods=['POST'])
+def add_pattern_to_add_phase():
+    global slm_list, slm_num, main_path, directory
+    if slm_num is not None and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+
+        # Get file path for additional phase from user
+        #file = request.files['path']
+        #fname = file.filename[:-19]
+        fname = request.form['fname']
+
+        # Add pattern path if its not global
+        path = os.path.join(directory, 'data', 'additional', fname)
+
+        # Add the additional phase pattern
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_pattern_to_additional(path)
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        additional_load_history.append({'fname': path, 'upload_time': upload_time})
+
+        print("Additional Phase Added from:" + path)
+
+        return redirect(url_for('use_add_phase'))
+    else:
+        print("No SLM Selected")
+    return redirect(url_for('use_add_phase'))
+
+@app.route('/save_add_phase', methods=['GET', 'POST'])
+def save_add_phase():
+    global slm_list, slm_num, main_path, directory
+    if slm_num is not None  and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+
+        # Get the file name from user
+        save_name = request.form['save_name']
+        # Add pattern path if its not an absolute path
+        save_path = os.path.join(directory, 'data', 'additional')
+        
+        # Dictionary containing save options
+        save_options = dict()
+        save_options["config"] = True # This option saves the information about how this additional phase was created
+        save_options["phase"] = True # saves the actual phase
+        save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
+        save_options["name"] = save_name # This name will be used in the path.
+
+        # Save additional phase pattern to new file
+        phase_mgr = current_slm_settings['phase_mgr']
+        config_path, saved_additional_path = phase_mgr.save_to_file(save_options)
+        print("Saved additional phase to: " + saved_additional_path)
+
+        return redirect(url_for('save_add_phase'))
+    else:
+        print("No SLM Selected")
+    return render_template('save_add_phase.html')
+
+@app.route('/correction', methods=['POST'])
+def correction():
+    global slm_list, slm_num, main_path, directory
+    if slm_num is not None and request.method == 'POST':
+        current_slm_settings = slm_list[slm_num]
+        # Get correction file name from user
+        #file = request.files['fname']
+        #fname = file.filename
+        fname = request.form['fname']
+
+        path = os.path.join(directory, 'data', 'manufacturer', fname)
+
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_correction(path, current_slm_settings['bitdepth'], 1)
+
+        print("Added Manufacturer Correction from: " + path)
+        """
+        # Check if connected to hardware
+        if  slm_settings['slm_type'] == "hamamatsu":
+            # Add correction phase pattern
+            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1)
+        else:
+            phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1) #TODO, in case you need to scale.
+            #TODO: ask what this is for?
+        """
+
+        return redirect(url_for('additional_pattern'))
+    else:
+        print("No SLM Connected")
+
+    return redirect(url_for('additional_pattern'))
 
 @app.route('/input_additional', methods=['GET', 'POST'])
 def input_additional():
@@ -593,356 +741,222 @@ def input_additional():
 @app.route('/add_fresnel_lens', methods=['POST'])
 def add_fresnel_lens():
     global slm_list, slm_num
-    if slm_num is not None:
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
+        #TODO: two focal lengths
 
-        if request.method == 'POST':
-            #TODO: two focal lengths
+        # Got focal length from user
+        focal_length = float(request.form['focal_length'])
+        # Store focal length in a 1D numpy array
+        focal_length = np.array([focal_length])
 
-            # Got focal length from user
-            focal_length = float(request.form['focal_length'])
-            # Store focal length in a 1D numpy array
-            focal_length = np.array([focal_length])
+        # Add the fresnel lens
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_fresnel_lens(focal_length[0])
+        print("Added fresnel lens with focal length: " + str(focal_length[0]))
 
-            # Add the fresnel lens
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_fresnel_lens(focal_length[0])
-            print("Added fresnel lens")
-
-            return redirect(url_for('input_additional'))
-    
+        return redirect(url_for('input_additional'))
+    else:
+        print("No SLM Selected")
     return redirect(url_for('input_additional'))
 
 @app.route('/add_offset', methods=['POST'])
 def add_offset():
     global slm_list, slm_num
-    if slm_num is not None:
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
 
-        if request.method =='POST':
-            # Get x,y coordinates for the offset
-            offset_x = float(request.form['offset_x'])
-            offset_y = float(request.form['offset_y'])
-            # Store offset coords in a 1D numpy array
-            offset = np.array([offset_x, offset_y])
+        # Get x,y coordinates for the offset
+        offset_x = float(request.form['offset_x'])
+        offset_y = float(request.form['offset_y'])
+        # Store offset coords in a 1D numpy array
+        offset = np.array([offset_x, offset_y])
 
-            # Add the offset
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_offset(offset)
+        # Add the offset
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_offset(offset)
 
-            return redirect(url_for('input_additional'))
-    
+        print("Added Offset: " + str(offset))
+        return redirect(url_for('input_additional'))
+    else:
+        print("No SLM Selected")
+
     return redirect(url_for('input_additional'))
 
 @app.route('/add_zernike_poly', methods=['POST'])
 def add_zernike_poly():
     global slm_list, slm_num
-    if slm_num is not None:
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
+ 
+        # Get the number of zernikes in the sum
+        npolys = (len(request.form)) // 3
 
-        if request.method == 'POST':
-            # Get the number of zernikes in the sum
-            npolys = (len(request.form)) // 3
+        # Initialize list of zernikes
+        poly_list = []
 
-            # Initialize list of zernikes
-            poly_list = []
+        # Loop over zernikes and append to the list
+        for i in range(npolys):
+            n = int(request.form.get(f'n{i}'))
+            m = int(request.form.get(f'm{i}'))
+            weight = float(request.form.get(f'weight{i}'))
+            poly_list.append(((n, m), weight))
 
-            # Loop over zernikes and append to the list
-            for i in range(npolys):
-                n = int(request.form.get(f'n{i}'))
-                m = int(request.form.get(f'm{i}'))
-                weight = float(request.form.get(f'weight{i}'))
-                poly_list.append(((n, m), weight))
+        # Add the sum of zernikes
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.add_zernike_poly(poly_list)
+        print("Added Zernike Polynomials: " + str(poly_list))
 
-            # Add the sum of zernikes
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_zernike_poly(poly_list)
-            print("Added Zernike")
-
-            return redirect(url_for('input_additional'))
-    
+        return redirect(url_for('input_additional'))
+    else:
+        print("No SLM Selected")
     return redirect(url_for('input_additional'))
 
 @app.route('/use_aperture', methods=['POST'])
 def use_aperture():
     global slm_list, slm_num
-    if slm_num is not None:
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
 
-        if request.method == 'POST':
-            # Get the aperture size from the user
-            aperture_size = float(request.form['aperture_size'])
-            # Store twice in a 1D numpy array
-            #TODO: why twice, should the user be able to pass a second aperture size?
-            aperture = np.array([aperture_size, aperture_size])
+        # Get the aperture size from the user
+        aperture_size = float(request.form['aperture_size'])
+        # Store twice in a 1D numpy array
+        #TODO: why twice, should the user be able to pass a second aperture size?
+        aperture = np.array([aperture_size, aperture_size])
 
-            # Set the aperture
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.set_aperture(aperture)
+        # Set the aperture
+        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr.set_aperture(aperture)
 
-            return redirect(url_for('input_additional'))
-    
+        print("Added Aperture of Size: " + str(aperture_size))
+        return redirect(url_for('input_additional'))
+    else:
+        print("No SLM Selected")
     return redirect(url_for('input_additional'))     
-
-@app.route('/save_add_phase', methods=['GET', 'POST'])
-def save_add_phase():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Get the file name from user
-            save_name = request.form['save_name']
-            # Add pattern path if its not an absolute path
-            save_path = main_path + "additional\\"
-            
-            # Dictionary containing save options
-            save_options = dict()
-            save_options["config"] = True # This option saves the information about how this additional phase was created
-            save_options["phase"] = True # saves the actual phase
-            save_options["path"] = save_path # Enable this to save to a desired path. By default it is the current working directory
-            save_options["name"] = save_name # This name will be used in the path.
-
-            # Save additional phase pattern to new file
-            phase_mgr = current_slm_settings['phase_mgr']
-            config_path, new_pattern_path = phase_mgr.save_to_file(save_options)
-            print(config_path)
-            print(new_pattern_path)
-
-            return redirect(url_for('save_add_phase'))
-    
-    return render_template('save_add_phase.html')
-
-@app.route('/use_add_phase', methods=['GET', 'POST'])
-def use_add_phase():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Get file name input by user
-            #file = request.files['fname']
-            #fname = file.filename[:-19]
-            fname = request.form['fname'][:-19]
-            print("Received for add phase: " + fname)
-
-            # Add pattern path if its just a file name
-            path = main_path + "additional\\" + fname
-
-            # Add additional phase pattern to phase manager
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_from_file(path)
-            print("Additional phase added succesfully")
-
-            return redirect(url_for('use_add_phase'))
-    
-    return render_template('use_add_phase.html')
-
-@app.route('/add_pattern_to_add_phase', methods=['POST'])
-def add_pattern_to_add_phase():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-
-            # Get file path for additional phase from user
-            #file = request.files['path']
-            #fname = file.filename[:-19]
-            fname = request.form['path'][:-19]
-            print("Received " + path)
-
-            # Add pattern path if its not global
-            path = main_path + "additional\\" + fname
-
-            # Add the additional phase pattern
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_pattern_to_additional(path)
-
-            return redirect(url_for('use_add_phase'))
-    
-    return redirect(url_for('use_add_phase'))
-
-@app.route('/reset_additional_phase', methods=['POST'])
-def reset_additional_phase():
-    global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Reset the additional phase pattern
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.reset_additional()
-            print("Sucesfully Reset Additional Phase")
-
-            return redirect(url_for('additional_pattern'))
-
-    return redirect(url_for('additional_pattern'))
-
-@app.route('/reset_aperture', methods=['POST'])
-def reset_aperture():
-    global slm_list, slm_num
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Reset the aperture
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.reset_aperture()
-            print("Aperture Reset")
-
-            return redirect(url_for('additional_pattern'))
-    
-    return redirect(url_for('additional_pattern'))
-
-@app.route('/correction', methods=['GET', 'POST'])
-def correction():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
-        current_slm_settings = slm_list[slm_num]
-
-        if request.method == 'POST':
-            # Get correction file name from user
-            #file = request.files['fname']
-            #fname = file.filename
-            fname = request.form['fname']
-            print("Received correction pattern: " + fname)
-
-            path = main_path + "manufacturer\\" + fname
-
-            phase_mgr = current_slm_settings['phase_mgr']
-            phase_mgr.add_correction(path, current_slm_settings['bitdepth'], 1)
-
-            """
-            # Check if connected to hardware
-            if  slm_settings['slm_type'] == "hamamatsu":
-                # Add correction phase pattern
-                phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1)
-            else:
-                phase_mgr.add_correction(fname, slm_settings['bitdepth'], 1) #TODO, in case you need to scale.
-                #TODO: ask what this is for?
-            """
-
-            return redirect(url_for('correction'))
-    
-    return render_template('correction.html')
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
 
     return render_template('config.html')
 
-@app.route('/load_config', methods=['GET', 'POST'])
+@app.route('/load_config', methods=['POST'])
 def load_config():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
+    global slm_list, slm_num, main_path, directory
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
         phase_mgr = current_slm_settings['phase_mgr']
-        if request.method == 'POST':
-            #filename = request.files['filename'].filename
-            filename = request.form['filename']
-            filepath = main_path + "config\\" + filename
+        
+        #filename = request.files['filename'].filename
+        filename = request.form['filename']
+        filepath = os.path.join(directory, 'data', 'config', filename)
 
-            with open(filepath, 'r') as fhdl:
-                config = yaml.load(fhdl, Loader=yaml.FullLoader)
-            
-            for key in config:
-                if key == "pattern":
-                    path = config["pattern"]
-                    load_base(path)
-                #elif key == "fourier_calibration":
-                    #send_load_fourier_calibration(config["fourier_calibration"])
-                elif key.startswith("file_correction"):
-                    fname = config[key] 
-                    phase_mgr.add_correction(fname, current_slm_settings['bitdepth'], 1)
-                    
-                elif key.startswith("fresnel_lens"):
-                    focal_length = np.array(ast.literal_eval(config[key]))
-                    if len(focal_length) == 1:
-                        phase_mgr.add_fresnel_lens(focal_length[0])
-                    else:
-                        phase_mgr.add_fresnel_lens(focal_length)
-                elif key == "zernike":
-                    res = ast.literal_eval(config["zernike"])
-                    new_list = []
-                    for item in res:
-                        new_list.append(((item[0][0], item[0][1]), item[1]))
-                    phase_mgr.add_zernike_poly(new_list)
-                elif key == "offset":
-                    offset = np.array(ast.literal_eval(config[key]))
-                    phase_mgr.add_offset(offset)
+        with open(filepath, 'r') as fhdl:
+            config = yaml.load(fhdl, Loader=yaml.FullLoader)
+        
+        for key in config:
+            if key == "pattern":
+                path = config["pattern"]
+                load_base(path)
+            #elif key == "fourier_calibration":
+                #send_load_fourier_calibration(config["fourier_calibration"])
+            elif key.startswith("file_correction"):
+                fname = config[key] 
+                phase_mgr.add_correction(fname, current_slm_settings['bitdepth'], 1)
+                
+            elif key.startswith("fresnel_lens"):
+                focal_length = np.array(ast.literal_eval(config[key]))
+                if len(focal_length) == 1:
+                    phase_mgr.add_fresnel_lens(focal_length[0])
+                else:
+                    phase_mgr.add_fresnel_lens(focal_length)
+            elif key == "zernike":
+                res = ast.literal_eval(config["zernike"])
+                new_list = []
+                for item in res:
+                    new_list.append(((item[0][0], item[0][1]), item[1]))
+                phase_mgr.add_zernike_poly(new_list)
+            elif key == "offset":
+                offset = np.array(ast.literal_eval(config[key]))
+                phase_mgr.add_offset(offset)
 
-            return redirect(url_for('config'))
-    
+        print("Config Loaded from: " + filepath)
+
+        return redirect(url_for('config'))
+    else:
+        print("No SLM Selected")
+
     return redirect(url_for('config'))
 
-@app.route('/save_config', methods=['GET', 'POST'])
+@app.route('/save_config', methods=['POST'])
 def save_config():
-    global slm_list, slm_num, main_path
-    if slm_num is not None:
+    global slm_list, slm_num, main_path, directory
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
         phase_mgr = current_slm_settings['phase_mgr']
 
-        if request.method == 'POST':
-            config_dict = dict()
-            base_str = phase_mgr.base_source
-            print(base_str)
-            if base_str != "":
-                config_dict["pattern"] = base_str
+        config_dict = dict()
+        base_str = phase_mgr.base_source
+        
+        if base_str != "":
+            config_dict["pattern"] = base_str
 
-            rep = ""
-            log = phase_mgr.add_log
-            for item in log:
-                rep = rep + str(item[0]) + ";" + str(item[1]) + ";"
-            
-            add_str = rep
+        rep = ""
+        log = phase_mgr.add_log
+        for item in log:
+            rep = rep + str(item[0]) + ";" + str(item[1]) + ";"
+        
+        add_str = rep
 
-            corrections = add_str.split(';')
-            correction_pattern_idx = 0
-            file_idx = 0
-            fresnel_lens_idx = 0
-            zernike_idx = 0
-            offset_idx = 0
-            for i in range(int(np.floor(len(corrections)/2))):
-                this_key = corrections[2 * i]
-                this_val = corrections[2 * i + 1]
-                if this_key == 'file_correction':
-                    if correction_pattern_idx > 0:
-                        config_dict[this_key + str(correction_pattern_idx)] = this_val
-                    else:
-                        config_dict[this_key] = this_val
-                    correction_pattern_idx += 1
-                elif this_key == "file":
-                    if file_idx > 0:
-                        config_dict[this_key + str(file_idx)] = this_val
-                    else:
-                        config_dict[this_key] = this_val
-                    file_idx += 1
-                elif this_key == 'fresnel_lens':
-                    if fresnel_lens_idx > 0:
-                        config_dict[this_key + str(fresnel_lens_idx)] = this_val
-                    else:
-                        config_dict[this_key] = this_val
-                    fresnel_lens_idx += 1
-                elif this_key == "zernike":
-                    if zernike_idx > 0:
-                        config_dict[this_key + str(zernike_idx)] = this_val
-                    else:
-                        config_dict[this_key] = this_val
-                    zernike_idx += 1
-                elif this_key == "offset":
-                    if offset_idx > 0:
-                        config_dict[this_key + str(offset_idx)] = this_val
-                    else:
-                        config_dict[this_key] = this_val
-                    offset_idx += 1
+        corrections = add_str.split(';')
+        correction_pattern_idx = 0
+        file_idx = 0
+        fresnel_lens_idx = 0
+        zernike_idx = 0
+        offset_idx = 0
+        for i in range(int(np.floor(len(corrections)/2))):
+            this_key = corrections[2 * i]
+            this_val = corrections[2 * i + 1]
+            if this_key == 'file_correction':
+                if correction_pattern_idx > 0:
+                    config_dict[this_key + str(correction_pattern_idx)] = this_val
+                else:
+                    config_dict[this_key] = this_val
+                correction_pattern_idx += 1
+            elif this_key == "file":
+                if file_idx > 0:
+                    config_dict[this_key + str(file_idx)] = this_val
+                else:
+                    config_dict[this_key] = this_val
+                file_idx += 1
+            elif this_key == 'fresnel_lens':
+                if fresnel_lens_idx > 0:
+                    config_dict[this_key + str(fresnel_lens_idx)] = this_val
+                else:
+                    config_dict[this_key] = this_val
+                fresnel_lens_idx += 1
+            elif this_key == "zernike":
+                if zernike_idx > 0:
+                    config_dict[this_key + str(zernike_idx)] = this_val
+                else:
+                    config_dict[this_key] = this_val
+                zernike_idx += 1
+            elif this_key == "offset":
+                if offset_idx > 0:
+                    config_dict[this_key + str(offset_idx)] = this_val
+                else:
+                    config_dict[this_key] = this_val
+                offset_idx += 1
 
-            save_name = request.form['save_name']
-            path = main_path + "config\\" + save_name
-            with open(path, 'x') as fhdl:
-                yaml.dump(config_dict, fhdl)
+        save_name = request.form['save_name']
+        path = os.path.join(directory, 'data', 'config', save_name)
+        with open(path, 'x') as fhdl:
+            yaml.dump(config_dict, fhdl)
 
-            return redirect(url_for('config'))
+        print("Config Saved to: " + path)
+
+        return redirect(url_for('config'))
+    else:
+        print("No SLM Selected")
         
     return redirect(url_for('config'))
 

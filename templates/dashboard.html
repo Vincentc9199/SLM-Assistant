@@ -7,20 +7,22 @@
 <div class="container-fluid p-2">
 <div class="row">
     <div class="col-sm-6">
-        <h5 class="text-left text-dark">Phase Info:</h5>
+        <h5 class="text-left text-dark ms-2">Phase Info</h5>
         
         <table class="table table-bordered table-hover">
             <tr class="align-middle">
-                <th>Base:</th>
+                <th>Base</th>
             </tr>
             {% if current_phase_info[0] %}
-            <tr class="align-middle">
-                <td>{{ current_phase_info[0] }}</td>
-            </tr>
+            <tbody class="table-grou-divider">
+                <tr class="align-middle">
+                    <td>{{ current_phase_info[0] }}</td>
+                </tr>
+            </tbody>
             {% endif %}
 
             <tr class="align-middle">
-                <th>Additional:</th>
+                <th>Additional</th>
             </tr>
             
             {% if current_phase_info[1] %}
@@ -32,9 +34,9 @@
             {% endif %}
             
             <tr class="align-middle">
-                <th>Aperture:</th>
+                <th>Aperture</th>
             </tr>
-            {% if current_phase_info[2] %}
+            {% if current_phase_info[2] and current_phase_info[2] != "None" %}
             <tr class="align-middle">
                 <td>{{ current_phase_info[2] }}</td>
             </tr>
@@ -85,7 +87,7 @@
     </div>
 
     <div class="col-sm-6">
-        <h5 class="text-left text-dark">SLM Settings:</h5>
+        <h5 class="text-left text-dark ms-2">SLM Settings</h5>
         <table class="table table-bordered table-hover text-center">
             <thead>
                 <tr class="align-middle">

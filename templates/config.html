@@ -5,18 +5,26 @@
 {% block content %}
 <div class="container-fluid p-2">
     <div class="row">
-        <div class="col-sm-8">
+        <div class="col">
+            <h5>Load Config</h5>
             <form action="{{ url_for('load_config') }}" method="POST">
                 <div class="input-group mb-2">
-                    <input class="form-control" type="text" id="filename" name="filename">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="filename" name="filename" placeholder=" Config File Name">
+                        <label for="filename">Config File Name</label>
+                    </div>
                     <button type="submit" class="btn btn-outline-primary">Upload Config</button>
                 </div>
             </form>
         </div>
-        <div class="col-sm-">
+        <div class="col">
+            <h5>Save Config</h5>
             <form action="{{ url_for('save_config') }}" method="POST">
                 <div class="input-group mb-2">
-                    <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                        <label for="save_name">Config Save Name</label>
+                    </div>
                     <button class="btn btn-outline-primary" type="submit">Save Config</button>
                 </div>
             </form>

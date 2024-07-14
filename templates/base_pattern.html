@@ -16,18 +16,7 @@
 <div class="container-fluid p-2">
     <div class="row">
         <div class="col-sm-4">
-            <form action="{{ url_for('use_pattern') }}" method="POST">
-                <div class="input-group mb-2">
-                    <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
-                    <button type="submit" class="btn btn-outline-primary">Upload Base Pattern</button>
-                </div>
-            </form>
-            <form class="mb-3" action="{{ url_for('reset_pattern') }}" method="POST">
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-outline-primary">Reset Base Pattern</button>
-                </div>
-            </form>
-            <h5>Calibration (Camera to k-space)</h5>
+            <h5 class="ms-2">Calibration (Camera to k-space)</h5>
             <table class="table table-bordered text-center">
                 <tr>
                     <td>{{ A[0][0] }}</td>
@@ -40,8 +29,24 @@
                     <td>{{ b[1] }}</td>
                 </tr>
             </table>
+            <h5 class="ms-2">Upload Base Pattern</h5>
+            <form action="{{ url_for('use_pattern') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
+                        <label for="fname">File Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Base Pattern</button>
+                </div>
+            </form>
+            <form class="mt-3" action="{{ url_for('reset_pattern') }}" method="POST">
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary">Reset Base Pattern</button>
+                </div>
+            </form>
         </div>
         <div class="col-sm-8">
+            <h5 class="invisible">Nothing</h5>
             <table class="table table-bordered table-hover text-center">
                 <thead class="align-middle">
                     <tr>
