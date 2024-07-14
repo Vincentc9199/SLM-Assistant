@@ -8,7 +8,7 @@ import CorrectedSLM
 #import CameraClient
 #import slmsuite.hardware.cameras.thorlabs
 import utils
-import re
+#import re
 import numpy as np
 import yaml
 import ast
@@ -44,7 +44,9 @@ dispatcher = SLMEventDispatcher()
 
 base_load_history = []
     
-main_path = '/Users/vincentcosta/Documents/Summer_Research/SLMdata/'
+main_path = os.path.join('Users', 'vincentcosta', 'Documents', 'Summer_Research', 'SLMdata')
+current = os.getcwd()
+print(current)
 
 computational_space = (2048, 2048)
 n_iterations = 20
@@ -493,7 +495,7 @@ def save_calculation(save_name):
         current_slm_settings = slm_list[slm_num]
 
         # Add pattern path if its not an absolute path
-        save_path = main_path + "base\\"
+        save_path = main_path + "\\base\\"
 
         # Dictionary to store save options
         save_options = dict()
@@ -526,7 +528,7 @@ def use_pattern():
         print("Received " + fname)
 
         # Add the pattern path (if it is just a file name)
-        path = main_path + "base\\" + fname
+        path = main_path + "\\base\\" + fname
 
         load_base(path)
 
