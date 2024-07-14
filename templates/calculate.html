@@ -33,39 +33,51 @@
     }
 </script>
 
-<form method="POST">
-    <div id="coordinates-container">
-        <div class="input-group p-2">
-            <input type="number" name="x_coords" class="form-control" placeholder="x" required>
-            <input type="number" name="y_coords" class="form-control" placeholder="y" required>
-            <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" required>
-            <button type="button" class="btn btn-outline-secondary" onclick="addPoint()">Add Point</button>
-        </div>
-    </div>
-
-    <div class="row p-2">
-        <div class="col">
-            <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-        </div>
-        <div class="col">
-            <div class="col">
-                <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+<div class="container-fluid p-2">
+    <form method="POST">
+        <div class="mb-2" id="coordinates-container">
+            <div class="input-group">
+                <input type="number" name="x_coords" class="form-control" placeholder="x" required>
+                <input type="number" name="y_coords" class="form-control" placeholder="y" required>
+                <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" required>
             </div>
         </div>
-    </div>
-    <div class="row p-2">
-        <div class="input-group">
-            <span class="input-group-text" id="basic-addon1">Initial Guess</span>
-            <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+    
+        <div class="text-end mb-3">
+            <button type="button" class="btn btn-outline-secondary" onclick="addPoint()">Add Point</button>
         </div>
-    </div>
-    <div class="form-check form-switch m-2">
-        <input class="form-check-input" type="checkbox" id="camera" name="camera" value="yes">
-        <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
-    </div>
-    <input type="hidden" name="camera" value="no">
-    <button type="submit" class="btn btn-outline-primary m-2">Start Calculation</button>
-</form>
+    
+        <div class="row">
+            <div class="col">
+                <div class="form-floating">
+                    <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+                    <label for="iteration_number"># of Iterations</label>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-floating">
+                    <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+                    <label for="save_name">Save Name</label>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-floating">
+                    <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess Name">
+                    <label for="guess_name">Initial Guess</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" id="camera" name="camera" value="yes">
+            <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
+        </div>
+        <input type="hidden" name="camera" value="no">
+        <button type="submit" class="btn btn-outline-primary mt-1">Start Calculation</button>
+    </form>
+</div>
+
+<!--
 <div class="row">
     <div class="col-6">
         <img src="{{ url_for('static', filename='images/slmplane.png') }}" class="img-fluid" alt="Nearfield Plot">
@@ -75,4 +87,5 @@
         <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
     </div>
 </div>
+-->
 {% endblock %}

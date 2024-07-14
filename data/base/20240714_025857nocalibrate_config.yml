@@ -1,0 +1,18 @@
+alg_settings:
+  feedback: computational_spot
+  fixed_phase: false
+  stat_groups:
+  - computational
+computational_shape: '[2048, 2048]'
+iteration: 20
+method: GS
+save_options:
+  config: true
+  crop: true
+  ff_pattern: true
+  name: nocalibrate
+  path: /Users/vincentcosta/Documents/GitHub/SLM-Assistant/data/base
+  prefix: '20240714_025857'
+  slm_pattern: true
+  target: true
+slm_shape: '[np.int64(1024), np.int64(1272)]'

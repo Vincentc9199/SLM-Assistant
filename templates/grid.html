@@ -159,7 +159,7 @@
             yCoords = points.map(p => p.y);
             amplitudes = points.map(p => p.amplitude);
 
-            fetch('/submit_points_grid', {
+            fetch('/submit_points', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

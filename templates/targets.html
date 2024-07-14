@@ -16,7 +16,10 @@
 <div class="container-fluid p-2">
     <form method="POST">
         <div class="input-group mb-2">
-            <input class="form-control" type="text" id="fname" name="fname">
+            <div class="form-floating">
+                <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
+                <label for="fname">File Name</label>
+            </div>
             <button type="submit" class="btn btn-outline-primary">Plot Targets</button>
         </div>
     </form>

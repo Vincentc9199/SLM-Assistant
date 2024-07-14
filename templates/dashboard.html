@@ -12,24 +12,33 @@
         <table class="table table-bordered table-hover">
             <tr class="align-middle">
                 <th>Base:</th>
-                {% if current_phase_info %}
-                <td>{{ current_phase_info[0] }}</td>
-                {% endif %}
             </tr>
+            {% if current_phase_info[0] %}
+            <tr class="align-middle">
+                <td>{{ current_phase_info[0] }}</td>
+            </tr>
+            {% endif %}
+
             <tr class="align-middle">
                 <th>Additional:</th>
-                {% if current_phase_info %}
-                {% for entry in current_phase_info[1] %}
-                <td>{{ entry }}</td>
-                {% endfor %}
-                {% endif %}
             </tr>
+            
+            {% if current_phase_info[1] %}
+            {% for entry in current_phase_info[1] %}
+            <tr class="align-middle">
+                <td>{{ entry }}</td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+            
             <tr class="align-middle">
                 <th>Aperture:</th>
-                {% if current_phase_info %}
-                <td>{{ current_phase_info[2] }}</td>
-                {% endif %}
             </tr>
+            {% if current_phase_info[2] %}
+            <tr class="align-middle">
+                <td>{{ current_phase_info[2] }}</td>
+            </tr>
+            {% endif %}
         </table>
         
         {% if phase_mgr.base_source %}
