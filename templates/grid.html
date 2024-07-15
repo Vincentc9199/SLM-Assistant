@@ -14,178 +14,315 @@
 </div>
 
 <h1>Select Points</h1>
-    <div class="center-coords">
-        <label for="center1">Center Coordinate 1 (Y):</label>
-        <input type="number" id="center1" value="0">
-        <label for="center2">Center Coordinate 2 (X):</label>
-        <input type="number" id="center2" value="0">
-        <label for="gridSize">Grid Size:</label>
-        <input type="number" id="gridSize" value="50">
+
+<!-- Div for user input of center coords and grid spacing-->
+<div class="center-coords">
+    <!-- Center Coord 1-->
+    <label for="center1">Center Coord 1:</label>
+    <input type="number" id="center1" value="0">
+    <!-- Center Coord 2-->
+    <label for="center2">Center Coord 2:</label>
+    <input type="number" id="center2" value="0">
+    <!-- Grid spacing-->
+    <label for="gridSpacing">Grid Spacing:</label>
+    <input type="number" id="gridSpacing" value="50">
+    <label for="width">Width:</label>
+    <input type="number" id="width" value="500">
+    <label for="width">Height:</label>
+    <input type="number" id="height" value="500">
+</div>
+
+<!-- Canvas, has hardcoded width and height-->
+<canvas class="border" id="pointCanvas" width="500" height="500"></canvas>
+
+<!-- Text for hover coordinates-->
+<p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+
+<!-- Form to submit points and setings-->
+<form id="pointsForm" method="POST" action="/submit_points">
+
+    <!-- Div containing the list of points-->
+    <div class="points-list">
+        <h2>Selected Points</h2>
+        <!-- the list of points-->
+        <ul id="pointsList"></ul>
     </div>
-    <canvas class="border" id="pointCanvas" width="500" height="500"></canvas>
-    <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
-    <form id="pointsForm" method="POST" action="/submit_points">
-        <div class="points-list">
-            <h2>Selected Points</h2>
-            <ul id="pointsList"></ul>
-        </div>
-        <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-        <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
-        <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
-        <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
-        <button type="button" onclick="submitPoints()">Submit Points</button>
-    </form>
-    <script>
-        const canvas = document.getElementById('pointCanvas');
-        const ctx = canvas.getContext('2d');
-        const hoverCoordinates = document.getElementById('hoverCoordinates');
-        const pointsList = document.getElementById('pointsList');
-        const centerCoord1 = document.getElementById('center1');
-        const centerCoord2 = document.getElementById('center2');
-        const gridSizeInput = document.getElementById('gridSize');
 
-        let points = [];
-        let xCoords = [];
-        let yCoords = [];
-        let amplitudes = [];
+    <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+    <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+    <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+    <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
+    <button type="button" onclick="submitPoints()">Submit Points</button>
+</form>
 
-        // Draw grid on the canvas
-        function drawGrid() {
-            const center1 = parseInt(centerCoord1.value, 10);
-            const center2 = parseInt(centerCoord2.value, 10);
-            const gridSize = parseInt(gridSizeInput.value, 10);
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+<script>
+    // Canvas
+    const canvas = document.getElementById('pointCanvas');
+    // Canvas context to draw
+    const ctx = canvas.getContext('2d');
+    // hover coordinates
+    const hoverCoordinates = document.getElementById('hoverCoordinates');
+    // list of points
+    const pointsList = document.getElementById('pointsList');
+    // center for coord 1
+    const centerCoord1 = document.getElementById('center1');
+    // center for coord 2
+    const centerCoord2 = document.getElementById('center2');
+    // grid spacing input by user
+    const gridSpacingInput = document.getElementById('gridSpacing');
 
-            ctx.strokeStyle = '#ccc';
-            ctx.lineWidth = 1;
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
 
-            // Draw vertical grid lines (Coordinate 2 axis)
-            for (let x = center2; x <= canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            for (let x = center2; x >= 0; x -= gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
+    // list of points
+    let points = [];
+    // list of points to draw
+    let pointsForDraw = [];
+    // list of coord 1
+    let Coords1 = [];
+    // list of coord 2
+    let Coords2 = [];
+    // list of amplitudes
+    let amplitudes = [];
 
-            // Draw horizontal grid lines (Coordinate 1 axis)
-            for (let y = center1; y <= canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-            for (let y = center1; y >= 0; y -= gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-            
-            const rect = canvas.getBoundingClientRect();
+    function resizeCanvas() {
+        const newWidth = parseFloat(widthInput.value)
+        const newHeight = parseFloat(heightInput.value)
 
-            // Redraw points
-            points.forEach(point => {
-                const canvasX = point.x + rect.height / 2 - center1;
-                const canvasY = -point.y + rect.width / 2 - center2;
-                drawPoint(canvasY, canvasX);
-            });
-        }
+        canvas.width = newWidth;
+        canvas.height = newHeight;
 
-        // Snap coordinates to the nearest grid intersection
-        function snapToGrid(coord1, coord2) {
-            const gridSize = parseInt(gridSizeInput.value, 10);
-            const snapped1 = Math.round(coord1 / gridSize) * gridSize;
-            const snapped2 = Math.round(coord2 / gridSize) * gridSize;
-            return [snapped1, snapped2];
-        }
-
-        // Update hover coordinates
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const center1 = parseInt(centerCoord1.value, 10);
-            const center2 = parseInt(centerCoord2.value, 10);
-            const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
-            const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
-            const [snapped1, snapped2] = snapToGrid(coord1, coord2);
-            hoverCoordinates.textContent = `Hover coordinates: (${snapped1}, ${snapped2})`;
-        });
-
-        // Select points
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const center1 = parseInt(centerCoord1.value, 10);
-            const center2 = parseInt(centerCoord2.value, 10);
-            const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
-            const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
-            const [snapped1, snapped2] = snapToGrid(coord1, coord2);
-            points.push({x: snapped1, y: snapped2, amplitude: 1}); // Default amplitude is 1
-            updatePointsList();
-            drawGrid(); // Redraw grid and points
-        });
-
-        // Draw a point on the canvas
-        function drawPoint(x, y) {
-            ctx.fillStyle = 'red';
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Update the points list display
-        function updatePointsList() {
-            pointsList.innerHTML = '';
-            points.forEach((point, index) => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
-                pointsList.appendChild(listItem);
-            });
-        }
-
-        // Update amplitude for a point
-        function updateAmplitude(index, value) {
-            points[index].amplitude = value;
-        }
-
-        // Submit points to the server
-        function submitPoints() {
-            xCoords = points.map(p => p.x);
-            yCoords = points.map(p => p.y);
-            amplitudes = points.map(p => p.amplitude);
-
-            fetch('/submit_points', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({xCoords, yCoords, amplitudes}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
-
-        // Draw initial grid
         drawGrid();
+    }
 
-        // Update grid when center coordinates or grid size change
-        centerCoord1.addEventListener('change', drawGrid);
-        centerCoord2.addEventListener('change', drawGrid);
-        gridSizeInput.addEventListener('change', drawGrid);
-    </script>
+    // Draw grid on the canvas
+    function drawGrid() {
+        // Get the actual values out of the user input
+        const center1 = parseFloat(centerCoord1.value);
+        const center2 = parseFloat(centerCoord2.value);
+        const gridSpacing = parseInt(gridSpacingInput.value);
+        // The actual center of the x axis
+        const centerX = canvas.width / 2
+        // The actual center of the y axis
+        const centerY = canvas.height / 2
+
+        // Clears the rectangle of the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Color of the gridlines
+        ctx.strokeStyle = '#ccc';
+        // Width of the gridlines
+        ctx.lineWidth = 1;
+
+        // Starts with x being the center of the canvas
+        // While x is less than the width of the canvas
+        // Add the grid spacing to x
+        /*
+        for (let x = centerX; x <= canvas.width; x += gridSpacing) {
+            // Declare we are drawing a new path
+            ctx.beginPath();
+            // Start the line at the x coordinate and at the top
+            ctx.moveTo(x, 0);
+            // Move it down to the bottom of the canvas
+            ctx.lineTo(x, canvas.height);
+            // Fill the line
+            ctx.stroke();
+        }
+
+        // Same thing but removing the grid spacing, so going to the left
+        for (let x = centerX; x >= 0; x -= gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        // Same thing but for y
+        for (let y = centerY; y <= canvas.height; y += gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        for (let y = centerY; y >= 0; y -= gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        */
+        for (let x = 0; x <= canvas.width; x += gridSpacing) {
+            // Declare we are drawing a new path
+            ctx.beginPath();
+            // Start the line at the x coordinate and at the top
+            ctx.moveTo(x, 0);
+            // Move it down to the bottom of the canvas
+            ctx.lineTo(x, canvas.height);
+            // Fill the line
+            ctx.stroke();
+        }
+        for (let y = 0; y <= canvas.height; y += gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Color of the gridlines
+        ctx.strokeStyle = 'red';
+        // Width of the gridlines
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvas.width, centerY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, canvas.height);
+        ctx.stroke();
+        
+        // The rectangle of the canvas
+        const rect = canvas.getBoundingClientRect();
+
+        // Draw all of the points from the Javascript list
+        
+        pointsForDraw.forEach(point => {
+            const xCoord = point.snappedX;
+            const yCoord = point.snappedY;
+
+            drawPoint(xCoord, yCoord);
+        });
+    }
 
 
+    // Snap coordinates to the nearest grid intersection
+    function snapToGrid(coord1, coord2) {
+        // Get the value of the grid spacing
+        const gridSpacing = parseFloat(gridSpacingInput.value);
+        
+        // Round the coordinates to their nearest value on the grid
+        const snapped1 = Math.round(coord1 / gridSpacing) * gridSpacing;
+        const snapped2 = Math.round(coord2 / gridSpacing) * gridSpacing;
+        return [snapped1, snapped2];
+    }
 
+
+    // Update hover coordinates
+    canvas.addEventListener('mousemove', (e) => {
+        // The rectangle of the canvas
+        const rect = canvas.getBoundingClientRect();
+        // center for coord 1
+        const center1 = parseFloat(centerCoord1.value);
+        // center for coord 2
+        const center2 = parseFloat(centerCoord2.value);
+        // value for coord 1
+        const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
+        // value for coord 2
+        const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
+        // Round the values onto grid
+        const [snapped1, snapped2] = snapToGrid(coord1, coord2);
+        // Update the content of hover coords
+        hoverCoordinates.textContent = `Hover coordinates: (${snapped1}, ${snapped2})`;
+    });
+
+    // Select points
+    canvas.addEventListener('click', (e) => {
+        // The rectangle for the canvas
+        const rect = canvas.getBoundingClientRect();
+        // center for coord 1
+        const center1 = parseFloat(centerCoord1.value);
+        // center for coord 2
+        const center2 = parseFloat(centerCoord2.value);
+        // value for coord 1
+        const coord1 = e.clientY - rect.top - rect.height / 2 + center1;
+        // value for coord 2
+        const coord2 = rect.right - e.clientX - rect.width / 2 + center2;
+        // Round to the grid
+        const [snapped1, snapped2] = snapToGrid(coord1, coord2);
+        // Add point to the list in Javascript
+        points.push({snapped1, snapped2, amplitude: 1}); // Default amplitude is 1
+        // Run the update function
+        updatePointsList();
+        
+        // what should actually be drawn on the canvas
+        const xCoord = e.clientX - rect.left;
+        const yCoord = e.clientY - rect.top;
+        // Round to the grid
+        const [snappedX, snappedY] = snapToGrid(xCoord, yCoord);
+        // Add to the list in JS
+        pointsForDraw.push({snappedX, snappedY});
+
+        drawGrid(); // Redraw grid and points
+    });
+
+    // Draw a point on the canvas
+    function drawPoint(x, y) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Update the points list display
+    function updatePointsList() {
+        // Empty out list in HTML
+        pointsList.innerHTML = '';
+        // Iterate over points in the Javascript list
+        points.forEach((point, index) => {
+            // Create an HTML list element
+            const listItem = document.createElement('li');
+            // Add the point to the list element
+            listItem.innerHTML = `Point (${point.snapped1}, ${point.snapped2}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+            // add the list element to the list in HTML
+            pointsList.appendChild(listItem);
+        });
+    }
+
+    // Update amplitude for a point
+    function updateAmplitude(index, value) {
+        points[index].amplitude = value;
+    }
+
+    // Submit points to the server
+    function submitPoints() {
+        Coords1 = points.map(p => p.coord1);
+        Coords2 = points.map(p => p.coord2);
+        amplitudes = points.map(p => p.amplitude);
+
+        iteration_number = document.getElementById('iteration_number').value;
+        guess_name = document.getElementById('guess_name').value;
+        save_name = document.getElementById('save_name').value;
+        camera = document.getElementById('camera').value;
+
+        fetch('/submit_points', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({Coords1, Coords2, amplitudes, iteration_number, guess_name, save_name, camera}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    // Draw initial grid
+    drawGrid();
+
+    // Update grid when center coordinates or grid size change
+    //centerCoord1.addEventListener('change', drawGrid);
+    //centerCoord2.addEventListener('change', drawGrid);
+    gridSpacingInput.addEventListener('change', drawGrid);
+    widthInput.addEventListener('change', resizeCanvas);
+    heightInput.addEventListener('change', resizeCanvas);
+</script>
 {% endblock %}
 
 

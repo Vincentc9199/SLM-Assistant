@@ -61,7 +61,7 @@
                 window.addEventListener('load', () => {
                     resizePlot();
 
-                    fetch('/display_targets')
+                    fetch('/display_targets_dashboard')
                         .then(response => response.json())
                         .then(data => {
                             const trace = {
@@ -73,7 +73,7 @@
                                 textposition: 'top center'
                             };
                             const layout = {
-                                title: 'Target Pattern',
+                                title: 'Targets (k-space)',
                                 xaxis: { title: 'k-x' },
                                 yaxis: { title: 'k-y' },
                                 autosize: true

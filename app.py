@@ -143,6 +143,8 @@ def on_create_slm():
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
     
+    slm.window.on_draw()
+    
     create_slm_function(slm)
 
 @app.route('/setup_virtual', methods=['GET'])
@@ -330,26 +332,11 @@ def get_screenshot():
     print("Succesfully saved screenshot to: " + output)
     #flash("Succesfully saved screenshot to: " + output)
 
-target_plot_flag = 0
-target_path = ""
-
-@app.route('/display_targets')
-def display_targets():
+@app.route('/display_targets_dashboard')
+def display_targets_dashboard():
     global slm_list, slm_num, target_plot_flag, target_path
     
-    if target_plot_flag:
-        targets = utils.get_target_from_file(target_path[:-9])
-        x_coords = targets[0].tolist()
-        y_coords = targets[1].tolist()
-        labels = list(range(len(x_coords)))
-
-        target_plot_flag = 0
-        print("Displaying targets from: " + target_path)
-        flash("Displaying targets from: " + target_path)
-
-        return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
-    
-    elif slm_num is not None:
+    if slm_num is not None:
         current_slm_settings = slm_list[slm_num]
 
         phase_mgr = current_slm_settings['phase_mgr']
@@ -359,7 +346,7 @@ def display_targets():
         labels = list(range(len(x_coords)))
 
         print("Displaying targets from: " + phase_mgr.base_source)
-        flash("Displaying targets from: " + phase_mgr.base_source)
+        #flash("Displaying targets from: " + phase_mgr.base_source)
 
         return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
     else:
@@ -441,6 +428,8 @@ def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera,
         # Create 1D numpy array containing amplitudes
         amp_data = np.array(amplitudes)
         
+        print("Received amplitudes: " + str(amp_data))
+
         # If user specified nothing, set to default
         if not iteration_number:
             iteration_number = n_iterations
@@ -515,8 +504,8 @@ def grid():
 @app.route('/submit_points', methods=['POST'])
 def submit_points():
     data = request.json
-    x_coords = data['xCoords']
-    y_coords = data['yCoords']
+    x_coords = data['Coords1']
+    y_coords = data['Coords2']
     amplitudes = data['amplitudes']
     iteration_number = data['iteration_number']
     camera = data['camera']
@@ -564,18 +553,33 @@ def reset_pattern():
 
     return redirect(url_for('base_pattern'))
 
+target_path = ""
+
 @app.route('/targets', methods=['GET', 'POST'])
 def targets():
-    global main_path, target_path, target_plot_flag, directory
+    global main_path, directory, target_path
     if request.method == "POST":
         #fname = request.files['fname'].filename
         fname = request.form['fname']
         target_path = os.path.join(directory, 'data', 'base', fname)
 
-        target_plot_flag = 1
         return redirect(url_for('targets'))
     
     return render_template('targets.html')
+
+@app.route('/display_targets')
+def display_targets():
+    global target_path
+    
+    targets = utils.get_target_from_file(target_path)
+    x_coords = targets[0].tolist()
+    y_coords = targets[1].tolist()
+    labels = list(range(len(x_coords)))
+
+    print("Displaying targets from: " + target_path)
+    #flash("Displaying targets from: " + phase_mgr.base_source)
+
+    return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
 
 @app.route('/additional_pattern', methods=['GET', 'POST'])
 def additional_pattern():
@@ -957,7 +961,7 @@ def save_config():
         return redirect(url_for('config'))
     else:
         print("No SLM Selected")
-        
+
     return redirect(url_for('config'))
 
 
