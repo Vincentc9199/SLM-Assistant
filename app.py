@@ -143,8 +143,8 @@ def on_create_slm():
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
     
-    slm.window.on_draw()
-    
+    slm.window.dispatch_event('on_draw')
+
     create_slm_function(slm)
 
 @app.route('/setup_virtual', methods=['GET'])
