@@ -27,7 +27,7 @@ def start_flask_app():
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
 def start_pyglet_app():
-    initial_window = pyglet.window.Window(visible=True)
+    #initial_window = pyglet.window.Window(visible=True)
     #event_logger = pyglet.window.event.WindowEventLogger()
     #initial_window.push_handlers(event_logger)
     print("Starting Pyglet App")
