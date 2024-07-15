@@ -38,9 +38,9 @@ def start_pyglet_app():
         for window in pyglet.app.windows:
             window.switch_to()
             window.dispatch_events()
-            window.dispatch_event('on_draw')
-            window.flip()
-            
+            #window.dispatch_event('on_draw')
+            #window.flip()
+
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
         self.dispatch_event('on_create_slm')
