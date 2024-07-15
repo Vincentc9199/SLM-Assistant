@@ -459,6 +459,7 @@ def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera,
 
         saved_pattern_path = save_calculation(save_name)[:-9]
         load_base(saved_pattern_path)
+        print("Finished Calculation, Save and Load")
     else:
         print("No SLM Selected")
         
@@ -491,6 +492,82 @@ def calculate():
     
     return render_template('calculate.html')
 
+@app.route('/lattice_box', methods=['GET', 'POST'])
+def lattice_box():
+    if request.method == 'POST':
+
+        lv11 = float(request.form['lv11'])
+        lv12 = float(request.form['lv12'])
+        lv21 = float(request.form['lv21'])
+        lv22 = float(request.form['lv22'])
+        offset_x = float(request.form['offset_x'])
+        offset_y = float(request.form['offset_y'])
+        width = float(request.form['width'])
+        height = float(request.form['height'])
+        center_x = float(request.form['center_x'])
+        center_y = float(request.form['center_y'])
+        iteration_number = request.form['iteration_number']
+        camera = request.form['camera']
+        guess_name = request.form['guess_name']
+        save_name = request.form['save_name']
+        edge_buffer = int(request.form['edge_buffer'])
+
+        lattice_vectors = [
+            np.array([lv11, lv21]),
+            np.array([lv12, lv22])]
+        
+        image_shape = (width, height)
+
+        offset = (offset_x, offset_y)
+
+        center_pix = (center_x, center_y)
+
+        spots, x_coords, y_coords = generate_lattice(image_shape, lattice_vectors, offset, center_pix, edge_buffer)
+
+        num_spots = len(x_coords)
+
+        amplitudes = np.ones(num_spots, dtype = float)
+
+        calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
+
+        return redirect(url_for('lattice_box'))
+    
+    return render_template('lattice_box.html')
+
+def generate_lattice( #Help me speed up this function, please!
+    image_shape, lattice_vectors, offset=(0, 0), center_pix='image', edge_buffer=2):
+
+    ##Preprocessing. Not much of a bottleneck:
+    if center_pix == 'image':
+        center_pix = np.array(image_shape) // 2
+    else: ##Express the center pixel in terms of the lattice vectors
+        center_pix = np.array(center_pix) - (np.array(image_shape) // 2)
+        lattice_components = np.linalg.solve(
+            np.vstack(lattice_vectors[:2]).T,
+            center_pix)
+        lattice_components -= lattice_components // 1
+        center_pix = (lattice_vectors[0] * lattice_components[0] +
+                      lattice_vectors[1] * lattice_components[1] +
+                      np.array(image_shape)//2)
+    num_vectors = int( ##Estimate how many lattice points we need
+        max(image_shape) / np.sqrt(lattice_vectors[0]**2).sum())
+    lattice_points = []
+    x_coords = []
+    y_coords = []
+    lower_bounds = np.array((edge_buffer, edge_buffer))
+    upper_bounds = np.array(image_shape) - edge_buffer
+
+    ##SLOW LOOP HERE. 'num_vectors' is often quite large.
+    for i in range(-num_vectors, num_vectors):
+        for j in range(-num_vectors, num_vectors):
+            lp = i * lattice_vectors[0] + j * lattice_vectors[1] + center_pix
+            if all(lower_bounds < lp) and all(lp < upper_bounds):
+                lp = lp + np.array(offset)
+                lattice_points.append(lp)
+                x_coords.append(lp[0])
+                y_coords.append(lp[1])
+    return lattice_points, x_coords, y_coords
+
 @app.route('/canvas')
 def canvas():
     return render_template('canvas.html')
@@ -502,11 +579,13 @@ def grid():
 @app.route('/submit_points', methods=['POST'])
 def submit_points():
     data = request.json
+    print(data)
     x_coords = data['Coords1']
     y_coords = data['Coords2']
     amplitudes = data['amplitudes']
     iteration_number = data['iteration_number']
-    camera = data['camera']
+    #camera = data['camera']
+    camera = 'yes'
     guess_name = data['guess_name']
     save_name = data['save_name']
     calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)

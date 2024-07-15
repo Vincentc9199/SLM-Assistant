@@ -14,43 +14,65 @@
 </div>
 
 
-<h1>Select Points</h1>
-<!-- Div to get the center coordinates-->
-<div class="center-coords">
-    <label for="center1">Center Coord 1:</label>
-    <input type="number" id="center1" value="0">
-    <label for="center2">Center Coord 2:</label>
-    <input type="number" id="center2" value="0">
+<h5 class="ms-2 mt-2">Select Targets (Camera Space)</h5>
+
+<!-- Div for user input of center coords and grid spacing-->
+<div class="center-coords input-group p-2">
+    <!-- Center Coord 1-->
+    <span class="input-group-text" for="center1">Center Coord 1:</span>
+    <input type="number" id="center1" value="0" class="form-control">
+    <!-- Center Coord 2-->
+    <span class="input-group-text" for="center2">Center Coord 2:</span>
+    <input type="number" id="center2" value="0" class="form-control">
     <!-- Grid spacing-->
-    <label for="gridSpacing">Grid Spacing:</label>
-    <input type="number" id="gridSpacing" value="50">
-    <label for="width">Width:</label>
-    <input type="number" id="width" value="500">
-    <label for="width">Height:</label>
-    <input type="number" id="height" value="500">
+    <span class="input-group-text" for="gridSpacing">Grid Spacing:</span>
+    <input type="number" id="gridSpacing" value="50" class="form-control">
+    <span class="input-group-text" for="width">Width:</span>
+    <input type="number" id="width" value="500" class="form-control">
+    <span class="input-group-text" for="width">Height:</span>
+    <input type="number" id="height" value="500" class="form-control">
 </div>
 
-<!-- Canvas, has a hardcoded width and height-->
-<canvas class="border" id="pointCanvas" width="500" height="500"></canvas>
-
 <!-- Text for hover coordinates-->
-<p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+<p class="ms-2" id="hoverCoordinates">Hover coordinates: (0, 0)</p>
+
+<!-- Canvas, has a hardcoded width and height-->
+<canvas class="border ms-2" id="pointCanvas" width="500" height="500"></canvas>
 
 <!-- Form to submit points and settings-->
 <form id="pointsForm" method="POST" action="/submit_points">
 
     <!-- Div containing the list of points-->
-    <div class="points-list">
-        <h2>Selected Points</h2>
+    <div class="points-list p-2">
+        <h5>Selected Targets</h5>
         <!-- List of points-->
-        <ul id="pointsList"></ul>
+        <ul class="list-group list-group-flush list-group-numbered" id="pointsList"></ul>
     </div>
 
-    <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-    <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
-    <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
+    <div class="row p-2">
+        <div class="col">
+            <div class="form-floating">
+                <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
+                <label for="iteration_number"># of Iterations</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
+                <label for="save_name">Save Name</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess Name">
+                <label for="guess_name">Initial Guess</label>
+            </div>
+        </div>
+    </div>
+    <!--
     <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
-    <button type="button" onclick="submitPoints()">Submit Points</button>
+    -->
+    <button class="btn btn-outline-primary m-2" type="button" onclick="submitPoints()">Submit Points</button>
 </form>
 
 
@@ -256,8 +278,9 @@
         points.forEach((point, index) => {
             // Create an HTML list element
             const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item');
             // Add the point to the list element
-            listItem.innerHTML = `Point (${point.coord1}, ${point.coord2}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
+            listItem.innerHTML = `Point (${point.coord1}, ${point.coord2}), Amplitude: <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
             // Add the list element to the list
             pointsList.appendChild(listItem);
         });
@@ -280,14 +303,14 @@
         iteration_number = document.getElementById('iteration_number').value;
         guess_name = document.getElementById('guess_name').value;
         save_name = document.getElementById('save_name').value;
-        camera = document.getElementById('camera').value;
+        //camera = document.getElementById('camera').value;
 
         fetch('/submit_points', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({Coords1, Coords2, amplitudes, iteration_number, guess_name, save_name, camera}),
+            body: JSON.stringify({Coords1, Coords2, amplitudes, iteration_number, guess_name, save_name}),
         })
         .then(response => response.json())
         .then(data => {
