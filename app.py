@@ -142,8 +142,6 @@ def on_create_slm():
                             setup_slm_settings['bitdepth'], 
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
-    
-    pyglet.app.run()
 
     create_slm_function(slm)
 
@@ -968,7 +966,7 @@ def save_config():
 if __name__ == '__main__':
     flask_thread = threading.Thread(target=start_flask_app, daemon=True)
     flask_thread.start()
-    #start_pyglet_app()
+    start_pyglet_app()
     
 
 """
