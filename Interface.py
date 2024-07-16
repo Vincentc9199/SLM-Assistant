@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.use('Agg')  # Use the 'Agg' backend
 mpl.rc('image', cmap='Blues')
-
 # This class acts as an interface between the server and the slmsuite library
 
 class SLMSuiteInterface:
@@ -31,6 +30,8 @@ class SLMSuiteInterface:
         self.cameraslm = None
         self.hologram = None
         self.fourier_calibration_source = ''
+        self.input_amplitudes = None
+        self.input_targets = None
 
     def set_SLM(self, slm=None):
         """
@@ -101,7 +102,7 @@ class SLMSuiteInterface:
         """
         return slmsuite.holography.toolbox.phase.lens(self.slm, focal_length), 1
 
-    def calculate(self, computational_shape, target_spot_array, target_amps=None, n_iters=20, save_options=None, extra_info = None, phase = None):
+    def calculate(self, computational_shape, target_spot_array, target_amps=None, n_iters=20, save_options=None, extra_info = None, phase = None, socketio=None):
         """
             Calculates the required phase pattern
 
@@ -119,10 +120,10 @@ class SLMSuiteInterface:
         if self.cameraslm is None:
             return None, None, -1
         if self.cameraslm.fourier_calibration is None:
-            self.hologram = slmsuite.holography.algorithms.SpotHologram(computational_shape, target_spot_array, phase = phase, spot_amp=target_amps, basis='knm', cameraslm=self.cameraslm)
+            self.hologram = slmsuite.holography.algorithms.SpotHologram(computational_shape, target_spot_array, phase = phase, spot_amp=target_amps, basis='knm', cameraslm=self.cameraslm, socketio=socketio)
             no_calib = 1
         else:
-            self.hologram = slmsuite.holography.algorithms.SpotHologram(computational_shape, target_spot_array, phase = phase, spot_amp=target_amps, basis='ij', cameraslm=self.cameraslm)
+            self.hologram = slmsuite.holography.algorithms.SpotHologram(computational_shape, target_spot_array, phase = phase, spot_amp=target_amps, basis='ij', cameraslm=self.cameraslm, socketio=socketio)
             no_calib = 0
         ntargets = target_spot_array.shape[1]
         if ntargets == 1:
@@ -170,7 +171,7 @@ class SLMSuiteInterface:
         if self.hologram is None:
             return None, None, -1
         else:
-            full_path, full_path2 = utils.save_slm_calculation(self.hologram, save_options, extra_info)
+            full_path, full_path2 = utils.save_slm_calculation(self.hologram, save_options, self.input_targets, self.input_amplitudes, extra_info)
             return full_path, full_path2, 0
 
     def get_amp(self):

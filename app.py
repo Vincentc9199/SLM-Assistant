@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 import os
 import Interface
 from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
@@ -19,7 +19,8 @@ import pyglet
 import threading
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+#app.secret_key = os.urandom(24)
+app.config['SECRET_KEY'] = os.urandom(24)
 socketio = SocketIO(app)
 
 def start_flask_app():
@@ -346,10 +347,14 @@ def display_targets_dashboard():
         current_slm_settings = slm_list[slm_num]
 
         phase_mgr = current_slm_settings['phase_mgr']
-        targets = utils.get_target_from_file(phase_mgr.base_source)
-        x_coords = targets[0].tolist()
-        y_coords = targets[1].tolist()
-        labels = list(range(len(x_coords)))
+        #targets = utils.get_target_from_file(phase_mgr.base_source)
+        #x_coords = targets[0].tolist()
+        #y_coords = targets[1].tolist()
+        _,data = utils.load_slm_calculation(phase_mgr.base_source, 0, 1)
+        input_targets = data['input_targets']
+        x_coords = input_targets[0].tolist()
+        y_coords = input_targets[1].tolist()
+        labels = list(range(1, len(x_coords) + 1))
 
         print("Displaying targets from: " + phase_mgr.base_source)
         #flash("Displaying targets from: " + phase_mgr.base_source)
@@ -414,11 +419,12 @@ def load_base(path):
         print("No SLM Connected")
 
 def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name):
-    global n_iterations, computational_space, main_path, slm_list, slm_num, directory
+    global n_iterations, computational_space, main_path, slm_list, slm_num, directory, socketio
 
     if slm_num is not None:
         current_slm_settings = slm_list[slm_num]
-        
+        iface = current_slm_settings['iface']
+
         x_coords = list(map(float, x_coords))
         y_coords = list(map(float, y_coords))
         targets = np.array([x_coords, y_coords])
@@ -433,8 +439,12 @@ def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera,
         amplitudes = list(map(float, amplitudes))
         # Create 1D numpy array containing amplitudes
         amp_data = np.array(amplitudes)
-        
+        amp_data_for_input = np.copy(amp_data)
+
         print("Received amplitudes: " + str(amp_data))
+
+        iface.input_amplitudes = amp_data_for_input
+        iface.input_targets = targets
 
         # If user specified nothing, set to default
         if not iteration_number:
@@ -457,13 +467,12 @@ def calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera,
             else:
                 print ("Cannot initiate the guess phase, since it was not saved")
 
-        iface = current_slm_settings['iface']
         # Calculate the base pattern to create the target using GS or WGS algo 
-        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase)
+        iface.calculate(computational_space, targets, amp_data, n_iters=int(iteration_number), phase=guess_phase, socketio=socketio)
 
-        #iface.plot_slmplane()
-        #iface.plot_farfield()
-        #iface.plot_stats()
+        iface.plot_slmplane()
+        iface.plot_farfield()
+        iface.plot_stats()
 
         saved_pattern_path = save_calculation(save_name)[:-9]
         load_base(saved_pattern_path)
@@ -598,7 +607,53 @@ def submit_points():
     save_name = data['save_name']
     calculate_function(x_coords, y_coords, amplitudes, iteration_number, camera, guess_name, save_name)
     return jsonify({'status': 'success'})
-    
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    global directory
+    if request.method == 'POST':
+
+        fname = request.form['fname']
+        input_amps = request.form['input_amps']
+
+        path = os.path.join(directory, 'data', 'base', fname)
+        _,data = utils.load_slm_calculation(path, 0, 1)
+        input_targets = data['input_targets']
+        x_coords = input_targets[0].tolist()
+        y_coords = input_targets[1].tolist()
+
+        if input_amps:
+            input_amps_list = input_amps.split(',')
+            input_amplitudes = list(map(float, input_amps_list))
+
+        else:
+            input_amplitudes = data['input_amplitudes']
+
+        num_points = len(x_coords)
+
+        return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points, input_amplitudes=input_amplitudes)
+    else:
+        x_coords = []
+        y_coords = []
+        num_points = 0
+    return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def save_calculation(save_name):
     global main_path, slm_list, slm_num, directory
     
@@ -656,10 +711,14 @@ def targets():
 def display_targets():
     global target_path
     
-    targets = utils.get_target_from_file(target_path)
-    x_coords = targets[0].tolist()
-    y_coords = targets[1].tolist()
-    labels = list(range(len(x_coords)))
+    #targets = utils.get_target_from_file(target_path)
+    #x_coords = targets[0].tolist()
+    #y_coords = targets[1].tolist()
+    _,data = utils.load_slm_calculation(target_path, 0, 1)
+    input_targets = data['input_targets']
+    x_coords = input_targets[0].tolist()
+    y_coords = input_targets[1].tolist()
+    labels = list(range(1, len(x_coords) + 1))
 
     print("Displaying targets from: " + target_path)
     #flash("Displaying targets from: " + phase_mgr.base_source)

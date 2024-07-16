@@ -10,6 +10,7 @@
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice Box</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('feedback') }}">Feedback</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
@@ -83,6 +84,15 @@
                 {% endfor %}
             </table>
             {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <img src="{{ url_for('static', filename='images/slmplane.png') }}" class="img-fluid" alt="Nearfield Plot">
+            <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
+        </div>
+        <div class="col-6">
+            <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
         </div>
     </div>
 </div>

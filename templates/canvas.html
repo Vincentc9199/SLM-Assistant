@@ -7,8 +7,10 @@
     <ul class="nav nav-tabs">
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice Box</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
         <li class="nav-item"><a class="nav-link active" href="{{ url_for('canvas') }}">Canvas</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('feedback') }}">Feedback</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
@@ -73,6 +75,10 @@
     <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
     -->
     <button class="btn btn-outline-primary m-2" type="button" onclick="submitPoints()">Submit Points</button>
+
+    <div class="progress" role="progressbar">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
+    </div>
 </form>
 
 
@@ -330,6 +336,21 @@
     widthInput.addEventListener('change', resizeCanvas);
     heightInput.addEventListener('change', resizeCanvas);
 </script>
+
+<script>
+    var socket = io();
+    socket.on('progress', function(data) {
+        var progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = data.progress + '%';
+        progressBar.innerHTML = data.progress.toFixed(2) + '%';
+        console.log('Received progress');  // Debug statement
+    });
+
+    socket.on('connect', function() {
+        console.log('Connected to server');  // Debug statement
+    });
+</script>
+
 {% endblock %}
 <!--
         <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
