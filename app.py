@@ -1013,6 +1013,7 @@ def load_config():
                 
             elif key.startswith("fresnel_lens"):
                 focal_length = np.array(ast.literal_eval(config[key]))
+                print(str(focal_length))
                 if len(focal_length) == 1:
                     phase_mgr.add_fresnel_lens(focal_length[0])
                 else:
