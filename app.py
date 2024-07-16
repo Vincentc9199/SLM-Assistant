@@ -824,7 +824,7 @@ def add_pattern_to_add_phase():
 @app.route('/save_add_phase', methods=['GET', 'POST'])
 def save_add_phase():
     global slm_list, slm_num, main_path, directory
-    if slm_num is not None  and request.method == 'POST':
+    if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
 
         # Get the file name from user
@@ -844,10 +844,10 @@ def save_add_phase():
         config_path, saved_additional_path = phase_mgr.save_to_file(save_options)
         print("Saved additional phase to: " + saved_additional_path)
 
-        return redirect(url_for('save_add_phase'))
+        return redirect(url_for('additional_pattern'))
     else:
         print("No SLM Selected")
-    return render_template('save_add_phase.html')
+    return render_template('additional_pattern')
 
 @app.route('/correction', methods=['POST'])
 def correction():
