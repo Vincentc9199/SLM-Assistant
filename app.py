@@ -789,7 +789,7 @@ def use_add_phase():
         return redirect(url_for('additional_pattern'))
     else:
         print("No SLM Selected")
-    return render_template('additional_pattern')
+    return redirect(url_for('additional_pattern'))
 
 @app.route('/add_pattern_to_add_phase', methods=['POST'])
 def add_pattern_to_add_phase():
@@ -816,10 +816,10 @@ def add_pattern_to_add_phase():
 
         print("Additional Phase Added from:" + path)
 
-        return redirect(url_for('use_add_phase'))
+        return redirect(url_for('additional_pattern'))
     else:
         print("No SLM Selected")
-    return redirect(url_for('use_add_phase'))
+    return redirect(url_for('additional_pattern'))
 
 @app.route('/save_add_phase', methods=['GET', 'POST'])
 def save_add_phase():
@@ -847,7 +847,7 @@ def save_add_phase():
         return redirect(url_for('additional_pattern'))
     else:
         print("No SLM Selected")
-    return render_template('additional_pattern')
+    return redirect(url_for('additional_pattern'))
 
 @app.route('/correction', methods=['POST'])
 def correction():
