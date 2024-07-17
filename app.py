@@ -5,8 +5,8 @@ import Interface
 from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
 import PhaseManager
 import CorrectedSLM
-#import CameraClient
-#import slmsuite.hardware.cameras.thorlabs
+import CameraClient
+import slmsuite.hardware.cameras.thorlabs
 import utils
 #import re
 import numpy as np
@@ -18,6 +18,8 @@ import datetime
 import pyglet
 import threading
 
+# Flask App
+
 app = Flask(__name__)
 #app.secret_key = os.urandom(24)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -27,6 +29,7 @@ def start_flask_app():
     print("Starting Flask App")
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
+# Pyglet App
 def start_pyglet_app():
     #initial_window = pyglet.window.Window(visible=True)
     #event_logger = pyglet.window.event.WindowEventLogger()
@@ -53,9 +56,13 @@ SLMEventDispatcher.register_event_type('on_create_slm')
 SLMEventDispatcher.register_event_type('on_project_pattern')
 dispatcher = SLMEventDispatcher()
 
+
+# History Lists TODO: make this a database
 base_load_history = []
 additional_load_history = []
+additional_save_history = []
 config_load_history = []
+config_save_history = []
 
 #main_path = None
 directory = os.getcwd()
@@ -154,8 +161,8 @@ def on_create_slm():
 
     create_slm_function(slm)
 
-@app.route('/setup_virtual', methods=['GET'])
-def setup_virtual():
+@app.route('/setup_virtual_slm', methods=['GET'])
+def setup_virtual_slm():
     global setup_slm_settings
 
     if request.method == 'GET':
@@ -222,6 +229,36 @@ def setup_slm_amp():
         return redirect(url_for('setup_slm_amp'))
     
     return render_template('setup_slm_amp.html')
+
+@app.route('/setup_camera', methods=['GET', 'POST'])
+def setup_camera():
+
+    if request.method == 'POST':
+
+        return redirect(url_for('setup_camera'))
+
+    return render_template('setup_camera.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
@@ -638,22 +675,6 @@ def feedback():
         num_points = 0
     return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def save_calculation(save_name):
     global main_path, slm_list, slm_num, directory
     
@@ -727,8 +748,10 @@ def display_targets():
 
 @app.route('/additional_pattern', methods=['GET', 'POST'])
 def additional_pattern():
-    global additional_load_history
-    return render_template('additional_pattern.html', additional_load_history = additional_load_history)
+    global additional_load_history, additional_save_history
+    return render_template('additional_pattern.html', 
+                           additional_load_history = additional_load_history,
+                           additional_save_history=additional_save_history)
 
 @app.route('/reset_additional_phase', methods=['POST'])
 def reset_additional_phase():
@@ -793,7 +816,7 @@ def use_add_phase():
 
 @app.route('/add_pattern_to_add_phase', methods=['POST'])
 def add_pattern_to_add_phase():
-    global slm_list, slm_num, main_path, directory
+    global slm_list, slm_num, main_path, directory, additional_load_history
     if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
 
@@ -823,7 +846,7 @@ def add_pattern_to_add_phase():
 
 @app.route('/save_add_phase', methods=['GET', 'POST'])
 def save_add_phase():
-    global slm_list, slm_num, main_path, directory
+    global slm_list, slm_num, main_path, directory, additional_save_history
     if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
 
@@ -842,6 +865,12 @@ def save_add_phase():
         # Save additional phase pattern to new file
         phase_mgr = current_slm_settings['phase_mgr']
         config_path, saved_additional_path = phase_mgr.save_to_file(save_options)
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        additional_save_history.append({'fname': save_path, 'upload_time': upload_time})
+
         print("Saved additional phase to: " + saved_additional_path)
 
         return redirect(url_for('additional_pattern'))
@@ -851,7 +880,7 @@ def save_add_phase():
 
 @app.route('/correction', methods=['POST'])
 def correction():
-    global slm_list, slm_num, main_path, directory
+    global slm_list, slm_num, main_path, directory, additional_load_history
     if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
         # Get correction file name from user
@@ -863,6 +892,11 @@ def correction():
 
         phase_mgr = current_slm_settings['phase_mgr']
         phase_mgr.add_correction(path, current_slm_settings['bitdepth'], 1)
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        additional_load_history.append({'fname': path, 'upload_time': upload_time})
 
         print("Added Manufacturer Correction from: " + path)
         """
@@ -985,11 +1019,13 @@ def use_aperture():
 @app.route('/config', methods=['GET', 'POST'])
 def config():
 
-    return render_template('config.html')
+    return render_template('config.html', 
+                           config_load_history=config_load_history, 
+                           config_save_history=config_save_history)
 
 @app.route('/load_config', methods=['POST'])
 def load_config():
-    global slm_list, slm_num, main_path, directory
+    global slm_list, slm_num, main_path, directory, config_load_history
     if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
         phase_mgr = current_slm_settings['phase_mgr']
@@ -1012,7 +1048,7 @@ def load_config():
                 phase_mgr.add_correction(fname, current_slm_settings['bitdepth'], 1)
                 
             elif key.startswith("fresnel_lens"):
-                focal_length = np.array(ast.literal_eval(config[key]))
+                focal_length = np.array([ast.literal_eval(config[key])])
                 print(str(focal_length))
                 if len(focal_length) == 1:
                     phase_mgr.add_fresnel_lens(focal_length[0])
@@ -1028,6 +1064,11 @@ def load_config():
                 offset = np.array(ast.literal_eval(config[key]))
                 phase_mgr.add_offset(offset)
 
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        config_load_history.append({'fname': filepath, 'upload_time': upload_time})
+
         print("Config Loaded from: " + filepath)
 
         return redirect(url_for('config'))
@@ -1038,7 +1079,7 @@ def load_config():
 
 @app.route('/save_config', methods=['POST'])
 def save_config():
-    global slm_list, slm_num, main_path, directory
+    global slm_list, slm_num, main_path, directory, config_save_history
     if slm_num is not None and request.method == 'POST':
         current_slm_settings = slm_list[slm_num]
         phase_mgr = current_slm_settings['phase_mgr']
@@ -1100,6 +1141,11 @@ def save_config():
         path = os.path.join(directory, 'data', 'config', save_name)
         with open(path, 'x') as fhdl:
             yaml.dump(config_dict, fhdl)
+
+        # Get the time the file was uploaded
+        upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Add the file name and upload time to the history
+        config_save_history.append({'fname': path, 'upload_time': upload_time})
 
         print("Config Saved to: " + path)
 

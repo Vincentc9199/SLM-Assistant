@@ -16,6 +16,25 @@
                     <button type="submit" class="btn btn-outline-primary">Upload Config</button>
                 </div>
             </form>
+            {% if config_load_history %}
+            <h5>History of Loaded Configs</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in config_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
         </div>
         <div class="col">
             <h5>Save Config</h5>
@@ -28,6 +47,25 @@
                     <button class="btn btn-outline-primary" type="submit">Save Config</button>
                 </div>
             </form>
+            {% if config_save_history %}
+            <h5>History of Saved Configs</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in config_save_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
         </div>
     </div>
 </div>

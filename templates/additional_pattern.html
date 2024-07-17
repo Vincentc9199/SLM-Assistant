@@ -36,7 +36,7 @@
             <form action="{{ url_for('add_pattern_to_add_phase') }}" method="POST">
                 <div class="input-group mb-2">
                     <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
-                    <button type="submit" class="btn btn-outline-primary">Upload Additional Phase (Other Method)</button>
+                    <button type="submit" class="btn btn-outline-primary">Upload Base Pattern as Additional Phase</button>
                 </div>
             </form>
 
@@ -63,6 +63,26 @@
                     </tr>
                 </thead>
                 {% for entry in additional_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+
+            {% if additional_save_history %}
+            <h5>History of Saved Additional Patterns</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in additional_save_history %}
                 <tbody>
                     <tr>
                         <td>{{ entry.fname }}</td>

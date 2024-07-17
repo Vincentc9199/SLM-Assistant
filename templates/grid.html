@@ -40,6 +40,10 @@
 <!-- Canvas, has hardcoded width and height-->
 <canvas class="border ms-2" id="pointCanvas" width="500" height="500"></canvas>
 
+<div>
+    <button class="btn btn-outline-danger m-2" type="button" onclick="removePoint()">Remove Point</button>
+</div>
+
 <!-- Form to submit points and setings-->
 <form id="pointsForm" method="POST" action="/submit_points">
 
@@ -337,6 +341,13 @@
         .catch((error) => {
             console.error('Error:', error);
         });
+    }
+
+    function removePoint() {
+        points.splice(-1, 1);
+        pointsForDraw.splice(-1, 1);
+        updatePointsList();
+        drawGrid();
     }
 
     // Draw initial grid

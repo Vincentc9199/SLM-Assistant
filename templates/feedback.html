@@ -19,33 +19,42 @@
     function addPoint() {
         var container = document.getElementById("coordinates-container");
         var pointDiv = document.createElement("div");
-        pointDiv.className = "input-group p-2";
+        var listElement = document.createElement("li");
+        pointDiv.className = "input-group ps-2";
         pointDiv.innerHTML = `
             <input type="number" name="x_coords" class="form-control" placeholder="x" required>
             <input type="number" name="y_coords" class="form-control" placeholder="y" required>
             <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" required>
             <button type="button" class="btn btn-outline-danger" onclick="removePoint(this)">Remove</button>
         `;
-        container.appendChild(pointDiv);
+        listElement.className = "list-group-item d-flex justify-content-between align-items-center";
+        listElement.appendChild(pointDiv);
+        container.appendChild(listElement);
     }
 
     function removePoint(button) {
         var pointDiv = button.parentElement;
-        pointDiv.remove();
+        var listElement = pointDiv.parentElement;
+        listElement.remove();
     }
 </script>
 
 <div class="container-fluid p-2">
     <h5>Target Coordinates</h5>
     <form action="{{ url_for('calculate') }}"  method="POST">
-        <div class="mb-2" id="coordinates-container">
-            {% for i in range(num_points) %}
-            <div class="input-group">
-                <input type="number" name="x_coords" class="form-control" placeholder="x" value="{{ x_coords[i] }}" required>
-                <input type="number" name="y_coords" class="form-control" placeholder="y" value="{{ y_coords[i] }}"  required>
-                <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" value="{{ input_amplitudes[i] }}" required>
-            </div>
+        <div class="mb-2" id="coordinates-container-backup">
+            <ul class="list-group list-group-flush list-group-numbered borderless" id="coordinates-container">
+                {% for i in range(num_points) %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="input-group ps-2">
+                        <input type="number" name="x_coords" class="form-control" placeholder="x" value="{{ x_coords[i] }}" required>
+                        <input type="number" name="y_coords" class="form-control" placeholder="y" value="{{ y_coords[i] }}"  required>
+                        <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" value="{{ input_amplitudes[i] }}" required>
+                        <button type="button" class="btn btn-outline-danger" onclick="removePoint(this)">Remove</button>
+                    </div>
+                </li>
             {% endfor %}
+            </ul>
         </div>
     
         <div class="text-end mb-3">
