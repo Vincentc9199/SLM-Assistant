@@ -86,8 +86,11 @@
         </div>
         <input type="hidden" name="camera" value="no">
 
-        <button type="submit" class="btn btn-outline-primary mt-1">Start Calculation</button>
-
+        <button class="btn btn-outline-primary m-2" type="button" onclick="submitPoints()">Submit Points</button>
+        
+        <div class="progress" role="progressbar">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
+        </div>
     </form>
 </div>
 
@@ -105,6 +108,32 @@
     });
 </script>
 
+<script>
+    // Submit points to the server
+    function submitPoints() {
+
+        iteration_number = document.getElementById('iteration_number').value;
+        guess_name = document.getElementById('guess_name').value;
+        save_name = document.getElementById('save_name').value;
+        //camera = document.getElementById('camera').value;
+
+        fetch('/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({iteration_number, guess_name, save_name}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+</script>
 <!--
 <div class="row">
     <div class="col-6">

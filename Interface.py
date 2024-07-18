@@ -32,8 +32,10 @@ class SLMSuiteInterface:
         self.fourier_calibration_source = ''
         self.input_amplitudes = None
         self.input_targets = None
+        self.slm_settings = None
+        self.camera_settings = None
 
-    def set_SLM(self, slm=None):
+    def set_SLM(self, slm=None, slm_settings=None):
         """
             Sets the SLM for this interface
 
@@ -50,9 +52,10 @@ class SLMSuiteInterface:
         self.slm = slm
         if self.camera is not None:
             self.cameraslm = slmsuite.hardware.cameraslms.FourierSLM(self.camera, self.slm)
+        self.slm_settings = slm_settings
         return slm
 
-    def set_camera(self, camera=None):
+    def set_camera(self, camera=None, camera_settings=None):
         """
             Sets the camera for this interface
 
@@ -68,7 +71,12 @@ class SLMSuiteInterface:
         self.camera = camera
         if self.slm is not None:
             self.cameraslm = slmsuite.hardware.cameraslms.FourierSLM(self.camera, self.slm)
+        self.camera_settings = camera_settings
         return camera
+
+    def set_hologram(self, computational_shape, target_spot_array, target_amps=None, socketio=None):
+        if self.cameraslm is not None:
+            self.hologram = slmsuite.holography.algorithms.SpotHologram(shape=computational_shape, spot_vectors=target_spot_array, spot_amp=target_amps, basis='knm', cameraslm=self.cameraslm, socketio=socketio)
 
     def set_slm_amplitude(self, amp):
         """
@@ -139,6 +147,15 @@ class SLMSuiteInterface:
             return full_path, full_path2, 1
         else:
             return full_path, full_path2, 0
+
+    def optimize(self, n_iters, method="WGS-Kim"):
+        if self.cameraslm is not None:
+            ntargets = len(self.hologram.spot_knm[0])
+            #print(ntargets)
+            if ntargets == 1:
+                self.hologram.optimize(method="GS", maxiter=n_iters, feedback='computational_spot', stat_groups=['computational'])
+            else:
+                self.hologram.optimize(method=method, maxiter=n_iters, feedback='computational_spot', stat_groups=['computational_spot'])
 
     def init_hologram(self, path, computational_shape):
         _,data = utils.load_slm_calculation(path, 1, 1)
@@ -222,7 +239,7 @@ class SLMSuiteInterface:
         """
         if self.hologram is not None:
             if (amp is None) and (phase is None):
-                self.hologram.plot_nearfield(cbar=True)
+                self.hologram.plot_nearfield(cbar=True, save_img=True)
                 return 0
             elif (amp is None) and (phase is not None):
                 amp = self.hologram.amp
@@ -261,25 +278,27 @@ class SLMSuiteInterface:
                 ax.set_xlabel("SLM $x$ [pix]")
                 if i==0: ax.set_ylabel("SLM $y$ [pix]")
 
-            fig.tight_layout()
-            fig.savefig('static/images/slmplane.png')
-            plt.close(fig)
+            #fig.tight_layout()
+            #fig.savefig('static/images/slmplane.png')
+            #plt.close(fig)
             #plt.show()
             print("Ran Plot Function")
             return 0
         else:
             return -1
 
-    def plot_farfield(self, amp=None, phase=None):
+    def plot_farfield(self, amp=None, phase=None, plot_target=None):
         """
 
         """
         if self.hologram is not None:
-            if (amp is None) and (phase is None):
-                self.hologram.plot_farfield(cbar=True)
+            if plot_target is True:
+                self.hologram.plot_farfield(self.hologram.target, cbar=True, title='Target', for_target=True, save_img=True)
+            elif (amp is None) and (phase is None):
+                self.hologram.plot_farfield(cbar=True, save_img=True)
             else:
                 farfield,_ = self.get_farfield(amp, phase)
-                self.hologram.plot_farfield(farfield, cbar=True)
+                self.hologram.plot_farfield(farfield, cbar=True, save_img=True)
             return 0
         else:
             return -1
@@ -289,7 +308,7 @@ class SLMSuiteInterface:
 
         """
         if self.hologram is not None:
-            self.hologram.plot_stats()
+            self.hologram.plot_stats(save_img=True)
             return 0
         else:
             return -1

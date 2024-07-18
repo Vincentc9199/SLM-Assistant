@@ -5,45 +5,68 @@
 {% block content %}
 
 <div class="container-fluid p-2">
-<div class="row">
-    <div class="col-sm-6">
-        <h5 class="text-left text-dark ms-2">Phase Info</h5>
-        
-        <table class="table table-bordered table-hover">
-            <tr class="align-middle">
-                <th>Base</th>
-            </tr>
-            {% if current_phase_info[0] %}
-            <tbody class="table-grou-divider">
-                <tr class="align-middle">
-                    <td>{{ current_phase_info[0] }}</td>
-                </tr>
-            </tbody>
+    <div class="row mb-3">
+        <div class="col">
+            {% if slm_list or camera_list %}
+            <h5>Select SLM and Camera</h5>
+                <form action="{{ url_for('setup_iface') }}" method="POST">
+                    <div class="input-group">
+                        <select class="form-select" aria-label="Default select example" name="slm_num">
+                            {% for slm_dict in slm_list %}
+                            <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Display Number: {{ slm_dict['display_num']}}</option>
+                            {% endfor %}
+                        </select>
+                        <select class="form-select" aria-label="Default select example" name="camera_num">
+                            {% for camera_dict in camera_list %}
+                            <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Camera Type: {{ camera_dict['camera_type'] }}, Serial: {{ camera_dict['serial_num'] }} </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary">Select SLM and Camera</button>
+                    </div>
+                </form>
             {% endif %}
+        </div>
+    </div>
 
-            <tr class="align-middle">
-                <th>Additional</th>
-            </tr>
+    <div class="row">
+        <div class="col-sm-6">
+            <h5 class="text-left text-dark ms-2">Phase Info</h5>
             
-            {% if current_phase_info[1] %}
-            {% for entry in current_phase_info[1] %}
-            <tr class="align-middle">
-                <td>{{ entry }}</td>
-            </tr>
-            {% endfor %}
-            {% endif %}
+            <table class="table table-bordered table-hover">
+                <tr class="align-middle">
+                    <th>Base</th>
+                </tr>
+                {% if phase_info[0] %}
+                <tbody class="table-grou-divider">
+                    <tr class="align-middle">
+                        <td>{{ phase_info[0] }}</td>
+                    </tr>
+                </tbody>
+                {% endif %}
+
+                <tr class="align-middle">
+                    <th>Additional</th>
+                </tr>
+                
+                {% if phase_info[1] %}
+                {% for entry in phase_info[1] %}
+                <tr class="align-middle">
+                    <td>{{ entry }}</td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+                
+                <tr class="align-middle">
+                    <th>Aperture</th>
+                </tr>
+                {% if phase_info[2] and phase_info[2] != "None" %}
+                <tr class="align-middle">
+                    <td>{{ phase_info[2] }}</td>
+                </tr>
+                {% endif %}
+            </table>
             
-            <tr class="align-middle">
-                <th>Aperture</th>
-            </tr>
-            {% if current_phase_info[2] and current_phase_info[2] != "None" %}
-            <tr class="align-middle">
-                <td>{{ current_phase_info[2] }}</td>
-            </tr>
-            {% endif %}
-        </table>
-        
-        {% if phase_mgr.base_source %}
+            {% if phase_info[0] %}
             <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
             <div id="plot_container">
@@ -51,7 +74,7 @@
             </div>
             
             <script>
-                 function resizePlot() {
+                function resizePlot() {
                     const plotDiv = document.getElementById('plot');
                     const width = plotDiv.clientWidth;
                     plotDiv.style.height = width + 'px';
@@ -83,65 +106,75 @@
                         .catch(error => console.error('Error fetching data:', error));
                     });
             </script>
-        {% endif %}
-    </div>
-
-    <div class="col-sm-6">
-        <h5 class="text-left text-dark ms-2">SLM Settings</h5>
-        <table class="table table-bordered table-hover text-center">
-            <thead>
-                <tr class="align-middle">
-                    <th>Display Number</th>
-                    <th>Bitdepth</th>
-                    <th>Design Wavelength</th>
-                    <th>Wavelength</th>
-                </tr>
-            </thead>
-            {% if current_slm_settings %}
-            <tbody>
-                <tr class="align-middle">
-                    <td>{{ current_slm_settings['display_num'] }}</td>
-                    <td>{{ current_slm_settings['bitdepth'] }}</td>
-                    <td>{{ current_slm_settings['wav_design_um'] }}</td>
-                    <td>{{ current_slm_settings['wav_um'] }}</td>
-                </tr>
-            </tbody>
             {% endif %}
-        </table>
-
-        <div class="row">
-            <div class="col-sm-6">
-                {% if slm_list %}
-                    <form action="{{ url_for('select_slm') }}" method="POST">
-                        <div class="input-group">
-                            <select class="form-select" aria-label="Default select example" name="slm_num">
-                                {% for slm_dict in slm_list %}
-                                <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Display Number: {{ slm_dict['display_num']}}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-outline-primary">Select SLM</button>
-                        </div>
-                    </form>
-                {% endif %}
+            
+            {% if hologram %}
+            <div class="p-3">
+                <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid rounded" alt="Hologram Target">
             </div>
-            <div class="col-sm-6">
-                {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
-                    <form action="{{ url_for('project') }}" method="POST">
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-outline-primary">Project</button>
-                        </div>
-                    </form>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
 
-        {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
-        <div class="p-3">
-            <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" class="img-fluid rounded" alt="Screenshot of the SLM">
+        <div class="col-sm-6">
+            <h5 class="text-left text-dark ms-2">SLM Settings</h5>
+            <table class="table table-bordered table-hover text-center">
+                <thead>
+                    <tr class="align-middle">
+                        <th>Display Number</th>
+                        <th>Bitdepth</th>
+                        <th>Design Wavelength</th>
+                        <th>Wavelength</th>
+                    </tr>
+                </thead>
+                {% if slm_settings %}
+                <tbody>
+                    <tr class="align-middle">
+                        <td>{{ slm_settings['display_num'] }}</td>
+                        <td>{{ slm_settings['bitdepth'] }}</td>
+                        <td>{{ slm_settings['wav_design_um'] }}</td>
+                        <td>{{ slm_settings['wav_um'] }}</td>
+                    </tr>
+                </tbody>
+                {% endif %}
+            </table>
+
+            <h5 class="text-left text-dark ms-2">Camera Settings</h5>
+            <table class="table table-bordered table-hover text-center">
+                <thead>
+                    <tr class="align-middle">
+                        <th>Camera Type</th>
+                        <th>Serial Number</th>
+                        <th>Fliplr</th>
+                    </tr>
+                </thead>
+                {% if camera_settings %}
+                <tbody>
+                    <tr class="align-middle">
+                        <td>{{ camera_settings['camera_type'] }}</td>
+                        <td>{{ camera_settings['serial_num'] }}</td>
+                        <td>{{ camera_settings['fliplr'] }}</td>
+                    </tr>
+                </tbody>
+                {% endif %}
+            </table>
+            
+            {% if slm_settings and not slm_settings['display_num'] == 'virtual' %}
+                <form action="{{ url_for('project') }}" method="POST">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-outline-primary">Project</button>
+                    </div>
+                </form>
+            {% endif %}
+            
+
+            {% if slm_settings and not slm_settings['display_num'] == 'virtual' %}
+            <div class="p-3">
+                <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" class="img-fluid rounded" alt="Screenshot of the SLM">
+            </div>
+            {% endif %}
+
         </div>
-        {% endif %}
     </div>
-</div>
 </div>
 
 <!-- 
@@ -228,7 +261,7 @@
 
     <div class="col-sm-3">
         {% if slm_list %}
-            <form action="{{ url_for('select_slm') }}" method="POST">
+            <form action="{{ url_for('setup_iface') }}" method="POST">
                 {% for slm_dict in slm_list %}
                 <input type="radio" name="slm_num" id="{{ loop.index0 }}" value="{{ loop.index0 }}"> Display Number: {{ slm_dict['display_num']}} </input><br>
                 {% endfor %}
@@ -253,7 +286,7 @@
 
 <div class="row text-center h3">
     <div class="col-sm-6">
-        {% if phase_mgr.base_source %}
+        
             <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
             <div id="plot" style="width: 100%; height: 50vh;"></div>
@@ -279,7 +312,7 @@
                         Plotly.newPlot('plot', [trace], layout);
                     });
             </script>
-        {% endif %}
+       
     </div>
     <div class="col-sm-6">
         {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}

@@ -13,7 +13,7 @@
 
     <header>
         <div class="container-fluid p-2 bg-dark text-bg-dark">
-            <h1 class="display-6">SLM Assistant <span class="badge bg-secondary-subtle text-dark">1.3.4</span></h1>
+            <h1 class="display-6">SLM Assistant <span class="badge bg-secondary-subtle text-dark">2.0.0</span></h1>
         </div>
     </header>
 
@@ -31,6 +31,7 @@
                         <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Setup</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
                         </ul>
@@ -39,12 +40,13 @@
                         <a class="nav-link dropdown-toggle" href="{{ url_for('base_pattern') }}" role="button" data-bs-toggle="dropdown">Base Pattern</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('calculate') }}">Targets - Manual Input</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('manual') }}">Targets - Manual Input</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('lattice_box') }}">Targets - Lattice Box</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('grid') }}">Targets - Grid</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('canvas') }}">Targets - Canvas</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('feedback') }}">Targets - Feedback</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('targets') }}">Plot Target</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('calculate_page') }}">Calculate</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">

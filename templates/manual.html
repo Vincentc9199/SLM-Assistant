@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Feedback - SLM Assistant{% endblock %}
+{% block title %}Manual Input - SLM Assistant{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('manual') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('manual') }}">Manual Input</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice Box</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('feedback') }}">Feedback</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('feedback') }}">Feedback</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
@@ -41,26 +41,24 @@
 
 <div class="container-fluid p-2">
     <h5>Target Coordinates</h5>
-    <form action="{{ url_for('manual') }}"  method="POST">
+    <form method="POST">
         <div class="mb-2" id="coordinates-container-backup">
             <ul class="list-group list-group-flush list-group-numbered borderless" id="coordinates-container">
-                {% for i in range(num_points) %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div class="input-group ps-2">
-                        <input type="number" name="x_coords" class="form-control" placeholder="x" value="{{ x_coords[i] }}" required>
-                        <input type="number" name="y_coords" class="form-control" placeholder="y" value="{{ y_coords[i] }}"  required>
-                        <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" value="{{ input_amplitudes[i] }}" required>
+                        <input type="number" name="x_coords" class="form-control" placeholder="x" required>
+                        <input type="number" name="y_coords" class="form-control" placeholder="y" required>
+                        <input type="number" name="amplitudes" class="form-control" placeholder="amplitude" step="any" required>
                         <button type="button" class="btn btn-outline-danger" onclick="removePoint(this)">Remove</button>
                     </div>
                 </li>
-            {% endfor %}
             </ul>
         </div>
     
         <div class="text-end mb-3">
             <button type="button" class="btn btn-outline-secondary" onclick="addPoint()">Add Point</button>
         </div>
-        
+    
         <div class="row">
             <div class="col">
                 <div class="form-floating">
@@ -87,29 +85,35 @@
             <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
         </div>
         <input type="hidden" name="camera" value="no">
+
         <button type="submit" class="btn btn-outline-primary mt-1">Start Calculation</button>
 
     </form>
-
-    <h5 class="mt-4">Load the Targets from a File</h5>
-    <form method="POST">
-        <div class="row mb-2">
-            <div class="col">
-                <div class="form-floating">
-                    <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
-                    <label for="iteration_number">File Name</label>
-                </div>
-            </div>
-        </div>
-        <div class="row mb-2">
-            <div class="col">
-                <div class="form-floating">
-                    <input class="form-control" type="text" id="input_amps" name="input_amps" placeholder="Input Amplitudes">
-                    <label for="iteration_number">Input New Amplitudes (separated by a comma)</label>
-                </div>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-outline-primary mt-1">Get Targets</button>
-    </form>
 </div>
+
+<script>
+    var socket = io();
+    socket.on('progress', function(data) {
+        var progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = data.progress + '%';
+        progressBar.innerHTML = data.progress.toFixed(2) + '%';
+        console.log('Received progress');  // Debug statement
+    });
+
+    socket.on('connect', function() {
+        console.log('Connected to server');  // Debug statement
+    });
+</script>
+
+<!--
+<div class="row">
+    <div class="col-6">
+        <img src="{{ url_for('static', filename='images/slmplane.png') }}" class="img-fluid" alt="Nearfield Plot">
+        <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
+    </div>
+    <div class="col-6">
+        <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
+    </div>
+</div>
+-->
 {% endblock %}

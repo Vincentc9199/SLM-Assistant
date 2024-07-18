@@ -3,54 +3,45 @@
 {% block title %}Setup Camera{% endblock %}
 
 {% block content %}
-    <h1>Setup Camera</h1>
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
+    </ul>
+</div>
+
+<div class="container-fluid p-2">
+    <h5 class="ms-2">Camera Settings</h5>
     <form method="POST">
-        <label for="camera_type">Camera Type:</label>
-        <select id="camera_type" name="camera_type" onchange="showCameraFields(this.value)">
-            <option value="virtual">Virtual</option>
-            <option value="network">Network</option>
-            <option value="thorcam_scientific_camera">Thorcam Scientific Camera</option>
-        </select><br><br>
+        <div class="input-group">
+            
+            <select class="form-select" aria-label="Default select example" name="camera_type">
+                <option id="camera_type">Camera Type</option>
+                <option id="thorlabs" value="thorlabs">Thorlabs</option>
+            </select>
+            
+            <div class="form-floating">
+                <input type="text" id="serial_num" name="serial_num" class="form-control" placeholder="Serial Number">
+                <label for="serial_num">Serial Number</label>
+            </div>
+            <select class="form-select" aria-label="Default select example" name="fliplr">
+                <option id="fliplr">Fliplr</option>
+                <option id="true" value="True">True</option>
+                <option id="false" value="False">False</option>
+            </select>
 
-        <div id="network_fields" style="display:none;">
-            <label for="camera_url">Camera URL:</label>
-            <input type="url" id="camera_url" name="camera_url"><br><br>
+            <button type="submit" class="btn btn-outline-primary">Submit Camera Setttings</button>
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ url_for('setup_virtual_camera') }}">Virtual Camera</a></li>
+            </ul>
         </div>
-
-        <div id="thorcam_fields" style="display:none;">
-            <label for="serial_num">Serial Number:</label>
-            <input type="text" id="serial_num" name="serial_num"><br><br>
-        </div>
-
-        <button type="submit">Submit</button>
     </form>
+</div>
 
-    {% if camera_settings %}
-        <h2>Current Camera Settings</h2>
-        <p>Camera Type: {{ camera_settings.camera_type }}</p>
-        {% if camera_settings.camera_type == 'network' %}
-            <p>Camera URL: {{ camera_settings.camera_url }}</p>
-        {% elif camera_settings.camera_type == 'thorcam_scientific_camera' %}
-            <p>Serial Number: {{ camera_settings.serial_num }}</p>
-        {% endif %}
-    {% endif %}
-
-    <script>
-        function showCameraFields(cameraType) {
-            var networkFields = document.getElementById('network_fields');
-            var thorcamFields = document.getElementById('thorcam_fields');
-
-            if (cameraType === 'network') {
-                networkFields.style.display = 'block';
-                thorcamFields.style.display = 'none';
-            } else if (cameraType === 'thorcam_scientific_camera') {
-                networkFields.style.display = 'none';
-                thorcamFields.style.display = 'block';
-            } else {
-                networkFields.style.display = 'none';
-                thorcamFields.style.display = 'none';
-            }
-        }
-    </script>
 {% endblock %}
 
