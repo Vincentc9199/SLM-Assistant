@@ -885,7 +885,7 @@ def calculate():
 
         data = request.json
         print(data)
-
+        save_name = data['save_name']
         iteration_number = int(data['iteration_number'])
         if not iteration_number:
             iteration_number = n_iterations
@@ -918,15 +918,15 @@ def calculate():
         iface.plot_farfield()
         iface.plot_stats()
 
-        save_name = data['save_name']
+        
         saved_pattern_path = save_calculation(save_name)[:-9]
         #TODO: probably an easier way to extract the phase pattern
-        #load_base(saved_pattern_path)
+        load_base(saved_pattern_path)
         print("Finished Calculation, Save and Load")
         
     else:
         print("No SLM Selected")
-        
+
     return jsonify({'status': 'success'})
 def save_calculation(save_name):
     global directory, iface
