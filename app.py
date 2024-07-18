@@ -1465,7 +1465,7 @@ def get_image():
     return redirect(url_for('camera'))
 
 @app.route('/set_exposure', methods=['POST'])
-def get_image():
+def set_exposure():
     global iface, directory
     if iface.camera is not None and iface.camera_settings['camera_type'] != 'virtual' and request.method == 'POST':
         exposure = float(request.form['exposure'])
