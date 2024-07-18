@@ -1471,6 +1471,7 @@ def set_exposure():
         exposure = float(request.form['exposure'])
 
         iface.camera.set_exposure(exposure)
+        
         return redirect(url_for('camera'))
     
     return redirect(url_for('camera'))

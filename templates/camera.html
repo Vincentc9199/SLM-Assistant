@@ -5,17 +5,18 @@
 {% block content %}
 
 <div class="container-fluid p-2">
-    <h5>Camera Image</h5>
     <form method="POST" action="{{ url_for('get_image') }}">
         <button type="submit" class="btn btn-outline-primary">Get Image</button>
     </form>
+
     <form method="POST" action="{{ url_for('set_exposure') }}">
         <div class="form-floating">
-            <input class="form-control" type="number" id="exposure" name="exposure" placeholder="Set Exposure" setp="any">
+            <input class="form-control" type="number" id="exposure" name="exposure" placeholder="Set Exposure" step="any">
             <label for="exposure">Set Exposure</label>
         </div>
         <button type="submit" class="btn btn-outline-primary">Set exposure</button>
     </form>
+    <h5>Camera Image</h5>
     <img src="{{ url_for('static', filename='images/cam_img.png') }}" class="img-fluid rounded" alt="Hologram Target">
 </div>
 
