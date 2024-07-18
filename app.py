@@ -568,6 +568,7 @@ def load_base(path):
         phase_mgr.set_base(phase, path)
         print("Base Pattern added from: " + path)
 
+        """
         input_targets = data['input_targets']
         x_coords = input_targets[0].tolist()
         y_coords = input_targets[1].tolist()
@@ -589,6 +590,7 @@ def load_base(path):
 
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
         iface.plot_farfield(plot_target=True)
+        """
 
         # Get the time the file was uploaded
         upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -641,8 +643,8 @@ def manual():
 
         print("Received amplitudes: " + str(amp_data))
         
-        iface.input_amplitudes = amp_data_for_input
-        iface.input_targets = targets
+        #iface.input_amplitudes = amp_data_for_input
+        #iface.input_targets = targets
 
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
         iface.plot_farfield(plot_target=True)
@@ -712,8 +714,8 @@ def lattice_box():
 
         print("Received amplitudes: " + str(amp_data))
         
-        iface.input_amplitudes = amp_data_for_input
-        iface.input_targets = targets
+        #iface.input_amplitudes = amp_data_for_input
+        #iface.input_targets = targets
         
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
         iface.plot_farfield(plot_target=True)
@@ -803,8 +805,8 @@ def submit_points():
 
     print("Received amplitudes: " + str(amp_data))
     
-    iface.input_amplitudes = amp_data_for_input
-    iface.input_targets = targets
+    #iface.input_amplitudes = amp_data_for_input
+    #iface.input_targets = targets
     
     iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
     iface.plot_farfield(plot_target=True)
@@ -885,7 +887,7 @@ def calculate():
 
         data = request.json
         print(data)
-        save_name = data['save_name']
+        save_name = data["save_name"]
         iteration_number = int(data['iteration_number'])
         if not iteration_number:
             iteration_number = n_iterations
@@ -918,7 +920,6 @@ def calculate():
         iface.plot_farfield()
         iface.plot_stats()
 
-        
         saved_pattern_path = save_calculation(save_name)[:-9]
         #TODO: probably an easier way to extract the phase pattern
         load_base(saved_pattern_path)
@@ -928,11 +929,10 @@ def calculate():
         print("No SLM Selected")
 
     return jsonify({'status': 'success'})
+
 def save_calculation(save_name):
     global directory, iface
     
-    
-
     # Add pattern path if its not an absolute path
     save_path = os.path.join(directory, 'data', 'base')
 
@@ -978,7 +978,7 @@ def targets():
         #fname = request.files['fname'].filename
         fname = request.form['fname']
         target_path = os.path.join(directory, 'data', 'base', fname)
-
+        
         return redirect(url_for('targets'))
     
     return render_template('targets.html')
