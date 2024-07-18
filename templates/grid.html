@@ -324,9 +324,9 @@
         Coords2 = points.map(p => p.snapped2);
         amplitudes = points.map(p => p.amplitude);
 
-        iteration_number = document.getElementById('iteration_number').value;
-        guess_name = document.getElementById('guess_name').value;
-        save_name = document.getElementById('save_name').value;
+        //iteration_number = document.getElementById('iteration_number').value;
+        //guess_name = document.getElementById('guess_name').value;
+        //save_name = document.getElementById('save_name').value;
         //camera = document.getElementById('camera').value;
 
         fetch('/submit_points', {
@@ -334,7 +334,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({Coords1, Coords2, amplitudes, iteration_number, guess_name, save_name}),
+            body: JSON.stringify({Coords1, Coords2, amplitudes}),
         })
         .then(response => response.json())
         .then(data => {
