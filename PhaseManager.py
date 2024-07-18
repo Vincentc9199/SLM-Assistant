@@ -97,7 +97,7 @@ class PhaseManager(object):
 
     def plot_additional(self):
         plot_phase(self.additional, title="Additional Pattern", name='additional.png')
-        
+
     def plot_total_phase(self):
         plot_phase(self.base + self.additional , title="Additional Pattern", name='total-phase.png')
 
@@ -122,7 +122,7 @@ def plot_phase(phase, title="", name=''):
     # Make a title, if given.
     plt.suptitle(title)
     path = os.path.join(os.getcwd(), 'static', 'images', name)
-    plt.savefig('path')
+    plt.savefig(path)
     plt.close()
     #plt.show()
 
