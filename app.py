@@ -923,9 +923,11 @@ def calculate():
         #TODO: probably an easier way to extract the phase pattern
         #load_base(saved_pattern_path)
         print("Finished Calculation, Save and Load")
+        
     else:
         print("No SLM Selected")
-
+        
+    return jsonify({'status': 'success'})
 def save_calculation(save_name):
     global directory, iface
     
