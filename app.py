@@ -1453,14 +1453,14 @@ def camera():
 @app.route('/get_image', methods=['POST'])
 def get_image():
     global iface, directory
-    if iface.camera is not None and iface.camera_settings['camera_type'] is not 'virtual' and request.method == 'POST':
+    if iface.camera is not None and iface.camera_settings['camera_type'] != 'virtual' and request.method == 'POST':
         img = iface.camera.get_image(attempts=20)
         plt.figure(figsize=(24, 12))
         plt.imshow(img)
         path = os.path.join(directory, 'static', 'images', 'cam_img.png')
         plt.savefig(path)
         plt.close()
-        return redirect(url_for(camera))
+        return redirect(url_for('camera'))
     
     return redirect(url_for('camera'))
 
