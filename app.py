@@ -384,15 +384,12 @@ def setup_slm_amp():
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
     global iface, slm_list, camera_list
-    if iface.slm is not None:
+    if iface.cameraslm is not None:
         slm_settings = iface.slm_settings
+        camera_settings = iface.camera_settings
         phase_info = get_phase_info()
-
         if slm_settings['display_num'] != 'virtual':
             get_screenshot()
-            
-    if iface.camera is not None:
-        camera_settings = iface.camera_settings
     else:
         phase_info = None
         camera_settings = None
@@ -405,7 +402,7 @@ def dashboard():
                            phase_info=phase_info,
                            slm_settings=slm_settings,
                            camera_settings=camera_settings,
-                           hologram=iface.hologram)
+                           iface=iface)
 
 ###################################################################################################
 
@@ -472,7 +469,7 @@ def get_screenshot():
 def project():
     global iface
     
-    if request.method == 'POST' and iface.slm is not None and not iface.slm_settings['display_num'] == 'virtual':
+    if request.method == 'POST' and iface.cameraslm is not None and not iface.slm_settings['display_num'] == 'virtual':
         pyglet.clock.schedule_once(lambda dt: dispatcher.project_pattern(), 0)
         print("Ran the HTTP route to project")
         return redirect(url_for('dashboard'))
@@ -496,7 +493,7 @@ def on_project_pattern():
 def display_targets_dashboard():
     global iface
 
-    if iface.slm is not None:
+    if iface.cameraslm is not None:
         phase_mgr = iface.slm.phase_mgr
 
         if phase_mgr.base_source:
@@ -558,9 +555,9 @@ def use_pattern():
     return render_template('base_pattern')
 
 def load_base(path):
-    global base_load_history, iface
+    global base_load_history, iface, computational_space, socketio
 
-    if iface.slm.phase_mgr is not None:
+    if iface.cameraslm is not None:
 
         # Get the phase pattern from the file
         _,data = utils.load_slm_calculation(path, 0, 1)
@@ -570,6 +567,28 @@ def load_base(path):
         # Set the phase pattern as the base of the phase manager
         phase_mgr.set_base(phase, path)
         print("Base Pattern added from: " + path)
+
+        input_targets = data['input_targets']
+        x_coords = input_targets[0].tolist()
+        y_coords = input_targets[1].tolist()
+        x_coords = list(map(float, x_coords))
+        y_coords = list(map(float, y_coords))
+        targets = np.array([x_coords, y_coords])
+
+        amplitudes = data['input_amplitudes']
+        # Convert amplitudes to floats
+        amplitudes = list(map(float, amplitudes))
+        # Create 1D numpy array containing amplitudes
+        amp_data = np.array(amplitudes)
+        amp_data_for_input = np.copy(amp_data)
+
+        print("Received amplitudes: " + str(amp_data))
+        
+        iface.input_amplitudes = amp_data_for_input
+        iface.input_targets = targets
+
+        iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
+        iface.plot_farfield(plot_target=True)
 
         # Get the time the file was uploaded
         upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
