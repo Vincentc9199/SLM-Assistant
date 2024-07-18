@@ -7,4 +7,8 @@
 <div class="p-3">
     <img src="{{ url_for('static', filename='images/cam_img.png') }}" class="img-fluid rounded" alt="Hologram Target">
 </div>
+
+<form method="POST" action="{{ url_for('get_image') }}">
+    <button type="submit" class="btn btn-outline-primary"></button>
+</form>
 {% endblock %}
