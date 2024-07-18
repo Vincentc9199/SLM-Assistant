@@ -1450,6 +1450,8 @@ def save_config():
 def camera():
     return render_template('camera.html')
 
+###################################################################################################
+
 @app.route('/get_image', methods=['POST'])
 def get_image():
     global iface, directory
@@ -1464,6 +1466,8 @@ def get_image():
     
     return redirect(url_for('camera'))
 
+###################################################################################################
+
 @app.route('/set_exposure', methods=['POST'])
 def set_exposure():
     global iface, directory
@@ -1471,10 +1475,26 @@ def set_exposure():
         exposure = float(request.form['exposure'])
 
         iface.camera.set_exposure(exposure)
-        
+
         return redirect(url_for('camera'))
     
     return redirect(url_for('camera'))
+
+###################################################################################################
+
+@app.route('/get_plots', methods=['POST'])
+def get_plots():
+    global iface
+    if request.method == 'POST' and iface.slm is not None:
+        phase_mgr = iface.slm.phase_mgr
+        phase_mgr.plot_base()
+        phase_mgr.plot_additional()
+        phase_mgr.plot_total_phase()
+
+        return redirect(url_for('camera'))
+    return redirect(url_for('camera'))
+
+###################################################################################################
 
 if __name__ == '__main__':
     flask_thread = threading.Thread(target=start_flask_app, daemon=True)

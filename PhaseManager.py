@@ -2,6 +2,8 @@ import numpy as np
 import slmsuite.holography.toolbox.phase
 import utils
 from PIL import Image
+from matplotlib import pyplot as plt
+import os
 
 class PhaseManager(object):
     def __init__(self, slm):
@@ -90,6 +92,39 @@ class PhaseManager(object):
         self.additional = self.additional + act_image_array
         self.add_log.append(["file_correction", fname])
 
+    def plot_base(self):
+        plot_phase(self.base, title="Base Pattern", name='base.png')
+
+    def plot_additional(self):
+        plot_phase(self.additional, title="Additional Pattern", name='additional.png')
+        
+    def plot_total_phase(self):
+        plot_phase(self.base + self.additional , title="Additional Pattern", name='total-phase.png')
+
+def plot_phase(phase, title="", name=''):
+    # One plot if no camera; two otherwise.
+    _, axs = plt.subplots(1, 1, figsize=(24,6))
+
+    
+    axs = [axs]
+
+    # Plot the phase.
+    axs[0].set_title("SLM Phase")
+    im = axs[0].imshow(
+        np.mod(phase, 2*np.pi),
+        vmin=0,
+        vmax=2*np.pi,
+        interpolation="none",
+        cmap="twilight"
+    )
+    plt.colorbar(im, ax=axs[0])
+
+    # Make a title, if given.
+    plt.suptitle(title)
+    path = os.path.join(os.getcwd(), 'static', 'images', name)
+    plt.savefig('path')
+    plt.close()
+    #plt.show()
 
 
 
