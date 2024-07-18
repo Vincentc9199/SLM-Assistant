@@ -83,7 +83,7 @@ def save_slm_calculation(hologram, save_options, input_targets, input_amplitudes
         npy_data["target"] = hologram.target
         npy_data["weights"] = hologram.weights
         npy_data['input_targets'] = hologram.spot_knm
-        npy_data['input_amplitudes'] = hologram.spot_amp
+        npy_data['input_amplitudes'] = input_amplitudes
         #npy_data['input_targets'] = input_targets
         #npy_data['input_amplitudes'] = input_amplitudes
 

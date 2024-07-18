@@ -643,7 +643,7 @@ def manual():
 
         print("Received amplitudes: " + str(amp_data))
         
-        #iface.input_amplitudes = amp_data_for_input
+        iface.input_amplitudes = amp_data_for_input
         #iface.input_targets = targets
 
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
@@ -714,7 +714,7 @@ def lattice_box():
 
         print("Received amplitudes: " + str(amp_data))
         
-        #iface.input_amplitudes = amp_data_for_input
+        iface.input_amplitudes = amp_data_for_input
         #iface.input_targets = targets
         
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
@@ -805,7 +805,7 @@ def submit_points():
 
     print("Received amplitudes: " + str(amp_data))
     
-    #iface.input_amplitudes = amp_data_for_input
+    iface.input_amplitudes = amp_data_for_input
     #iface.input_targets = targets
     
     iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, socketio=socketio)
@@ -978,7 +978,7 @@ def targets():
         #fname = request.files['fname'].filename
         fname = request.form['fname']
         target_path = os.path.join(directory, 'data', 'base', fname)
-        
+
         return redirect(url_for('targets'))
     
     return render_template('targets.html')
