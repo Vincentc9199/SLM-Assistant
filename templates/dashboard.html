@@ -67,7 +67,7 @@
             </table>
             
             {% if phase_info[0] %}
-            <!--
+            
             <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
             <div id="plot_container">
@@ -97,7 +97,7 @@
                                 textposition: 'top center'
                             };
                             const layout = {
-                                title: 'Targets (k-space) if there is a base pattern loaded',
+                                title: 'Intended Target (k-space) of Base Pattern',
                                 xaxis: { title: 'k-x' },
                                 yaxis: { title: 'k-y' },
                                 autosize: true
@@ -107,7 +107,7 @@
                         .catch(error => console.error('Error fetching data:', error));
                     });
             </script>
-            -->
+            
             {% endif %}
 
             {% if iface.hologram %}
