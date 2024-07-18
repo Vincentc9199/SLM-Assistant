@@ -1464,6 +1464,17 @@ def get_image():
     
     return redirect(url_for('camera'))
 
+@app.route('/set_exposure', methods=['POST'])
+def get_image():
+    global iface, directory
+    if iface.camera is not None and iface.camera_settings['camera_type'] != 'virtual' and request.method == 'POST':
+        exposure = float(request.form['exposure'])
+
+        iface.camera.set_exposure(exposure)
+        return redirect(url_for('camera'))
+    
+    return redirect(url_for('camera'))
+
 if __name__ == '__main__':
     flask_thread = threading.Thread(target=start_flask_app, daemon=True)
     flask_thread.start()
