@@ -16,6 +16,11 @@
         </div>
         <button type="submit" class="btn btn-outline-primary">Set exposure</button>
     </form>
+
+    <form method="POST" action="{{ url_for('get_plots') }}">
+        <button type="submit" class="btn btn-outline-primary">Get Plots</button>
+    </form>
+    
     <h5>Camera Image</h5>
     <img src="{{ url_for('static', filename='images/cam_img.png') }}" class="img-fluid rounded" alt="Hologram Target">
     
