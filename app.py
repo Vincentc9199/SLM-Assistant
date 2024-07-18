@@ -1012,13 +1012,13 @@ def additional_pattern():
                            additional_load_history = additional_load_history,
                            additional_save_history=additional_save_history)
 
+###################################################################################################
+
 @app.route('/reset_additional_phase', methods=['POST'])
 def reset_additional_phase():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
-        # Reset the additional phase pattern
-        phase_mgr = current_slm_settings['phase_mgr']
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.reset_additional()
         print("Reset Additional Phase")
 
@@ -1028,13 +1028,13 @@ def reset_additional_phase():
 
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/reset_aperture', methods=['POST'])
 def reset_aperture():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
-        # Reset the aperture
-        phase_mgr = current_slm_settings['phase_mgr']
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.reset_aperture()
         print("Aperture Reset")
 
@@ -1044,11 +1044,14 @@ def reset_aperture():
 
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/use_add_phase', methods=['GET', 'POST'])
 def use_add_phase():
-    global slm_list, slm_num, main_path, directory, additional_load_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global directory, additional_load_history, iface
+
+    if iface.cameraslm is not None and request.method == 'POST':
+        
 
         # Get file name input by user
         #file = request.files['fname']
@@ -1058,7 +1061,7 @@ def use_add_phase():
         path = os.path.join(directory, 'data', 'additional', fname)
 
         # Add additional phase pattern to phase manager
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.add_from_file(path)
 
         # Get the time the file was uploaded
@@ -1073,11 +1076,13 @@ def use_add_phase():
         print("No SLM Selected")
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/add_pattern_to_add_phase', methods=['POST'])
 def add_pattern_to_add_phase():
-    global slm_list, slm_num, main_path, directory, additional_load_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global directory, additional_load_history, iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        
 
         # Get file path for additional phase from user
         #file = request.files['path']
@@ -1088,7 +1093,7 @@ def add_pattern_to_add_phase():
         path = os.path.join(directory, 'data', 'additional', fname)
 
         # Add the additional phase pattern
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.add_pattern_to_additional(path)
 
         # Get the time the file was uploaded
@@ -1096,18 +1101,20 @@ def add_pattern_to_add_phase():
         # Add the file name and upload time to the history
         additional_load_history.append({'fname': path, 'upload_time': upload_time})
 
-        print("Additional Phase Added from:" + path)
+        print("Base Pattern Added as Additional Phase:" + path)
 
         return redirect(url_for('additional_pattern'))
     else:
         print("No SLM Selected")
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/save_add_phase', methods=['GET', 'POST'])
 def save_add_phase():
-    global slm_list, slm_num, main_path, directory, additional_save_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global directory, additional_save_history, iface
+
+    if iface.cameraslm is not None and request.method == 'POST':
 
         # Get the file name from user
         save_name = request.form['save_name']
@@ -1122,7 +1129,7 @@ def save_add_phase():
         save_options["name"] = save_name # This name will be used in the path.
 
         # Save additional phase pattern to new file
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         config_path, saved_additional_path = phase_mgr.save_to_file(save_options)
 
         # Get the time the file was uploaded
@@ -1137,11 +1144,14 @@ def save_add_phase():
         print("No SLM Selected")
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/correction', methods=['POST'])
 def correction():
-    global slm_list, slm_num, main_path, directory, additional_load_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global directory, additional_load_history, iface
+
+    if iface.cameraslm is not None and request.method == 'POST':
+        
         # Get correction file name from user
         #file = request.files['fname']
         #fname = file.filename
@@ -1149,8 +1159,8 @@ def correction():
 
         path = os.path.join(directory, 'data', 'manufacturer', fname)
 
-        phase_mgr = current_slm_settings['phase_mgr']
-        phase_mgr.add_correction(path, current_slm_settings['bitdepth'], 1)
+        phase_mgr = iface.slm.phase_mgr
+        phase_mgr.add_correction(path, iface.slm_settings['bitdepth'], 1)
 
         # Get the time the file was uploaded
         upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1174,16 +1184,20 @@ def correction():
 
     return redirect(url_for('additional_pattern'))
 
+###################################################################################################
+
 @app.route('/input_additional', methods=['GET', 'POST'])
 def input_additional():
 
     return render_template('input_additional.html')
 
+###################################################################################################
+
 @app.route('/add_fresnel_lens', methods=['POST'])
 def add_fresnel_lens():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
         #TODO: two focal lengths
 
         # Got focal length from user
@@ -1192,7 +1206,7 @@ def add_fresnel_lens():
         focal_length = np.array([focal_length])
 
         # Add the fresnel lens
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.add_fresnel_lens(focal_length[0])
         print("Added fresnel lens with focal length: " + str(focal_length[0]))
 
@@ -1201,11 +1215,13 @@ def add_fresnel_lens():
         print("No SLM Selected")
     return redirect(url_for('input_additional'))
 
+###################################################################################################
+
 @app.route('/add_offset', methods=['POST'])
 def add_offset():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
 
         # Get x,y coordinates for the offset
         offset_x = float(request.form['offset_x'])
@@ -1214,7 +1230,7 @@ def add_offset():
         offset = np.array([offset_x, offset_y])
 
         # Add the offset
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.add_offset(offset)
 
         print("Added Offset: " + str(offset))
@@ -1224,11 +1240,13 @@ def add_offset():
 
     return redirect(url_for('input_additional'))
 
+###################################################################################################
+
 @app.route('/add_zernike_poly', methods=['POST'])
 def add_zernike_poly():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
  
         # Get the number of zernikes in the sum
         npolys = (len(request.form)) // 3
@@ -1244,7 +1262,7 @@ def add_zernike_poly():
             poly_list.append(((n, m), weight))
 
         # Add the sum of zernikes
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.add_zernike_poly(poly_list)
         print("Added Zernike Polynomials: " + str(poly_list))
 
@@ -1253,11 +1271,13 @@ def add_zernike_poly():
         print("No SLM Selected")
     return redirect(url_for('input_additional'))
 
+###################################################################################################
+
 @app.route('/use_aperture', methods=['POST'])
 def use_aperture():
-    global slm_list, slm_num
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
+    global iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
 
         # Get the aperture size from the user
         aperture_size = float(request.form['aperture_size'])
@@ -1266,7 +1286,7 @@ def use_aperture():
         aperture = np.array([aperture_size, aperture_size])
 
         # Set the aperture
-        phase_mgr = current_slm_settings['phase_mgr']
+        phase_mgr = iface.slm.phase_mgr
         phase_mgr.set_aperture(aperture)
 
         print("Added Aperture of Size: " + str(aperture_size))
@@ -1275,6 +1295,10 @@ def use_aperture():
         print("No SLM Selected")
     return redirect(url_for('input_additional'))     
 
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
 @app.route('/config', methods=['GET', 'POST'])
 def config():
 
@@ -1282,12 +1306,14 @@ def config():
                            config_load_history=config_load_history, 
                            config_save_history=config_save_history)
 
+###################################################################################################
+
 @app.route('/load_config', methods=['POST'])
 def load_config():
-    global slm_list, slm_num, main_path, directory, config_load_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
-        phase_mgr = current_slm_settings['phase_mgr']
+    global directory, config_load_history, iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
+        phase_mgr = iface.slm.phase_mgr
         
         #filename = request.files['filename'].filename
         filename = request.form['filename']
@@ -1304,7 +1330,7 @@ def load_config():
                 #send_load_fourier_calibration(config["fourier_calibration"])
             elif key.startswith("file_correction"):
                 fname = config[key] 
-                phase_mgr.add_correction(fname, current_slm_settings['bitdepth'], 1)
+                phase_mgr.add_correction(fname, iface.slm_settings['bitdepth'], 1)
                 
             elif key.startswith("fresnel_lens"):
                 focal_length = np.array([ast.literal_eval(config[key])])
@@ -1336,12 +1362,14 @@ def load_config():
 
     return redirect(url_for('config'))
 
+###################################################################################################
+
 @app.route('/save_config', methods=['POST'])
 def save_config():
-    global slm_list, slm_num, main_path, directory, config_save_history
-    if slm_num is not None and request.method == 'POST':
-        current_slm_settings = slm_list[slm_num]
-        phase_mgr = current_slm_settings['phase_mgr']
+    global directory, config_save_history, iface
+    if iface.cameraslm is not None and request.method == 'POST':
+        #current_slm_settings = slm_list[slm_num]
+        phase_mgr = iface.slm.phase_mgr
 
         config_dict = dict()
         base_str = phase_mgr.base_source
