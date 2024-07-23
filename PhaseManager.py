@@ -99,28 +99,24 @@ class PhaseManager(object):
         plot_phase(self.additional, title="Additional Pattern", name='additional.png')
 
     def plot_total_phase(self):
-        plot_phase(self.base + self.additional , title="Additional Pattern", name='total-phase.png')
+        plot_phase(self.base + self.additional , title="Total Phase", name='total-phase.png')
 
 def plot_phase(phase, title="", name=''):
     # One plot if no camera; two otherwise.
-    _, axs = plt.subplots(1, 1, figsize=(24,6))
-
-    
-    axs = [axs]
+    fig, ax = plt.subplots()
 
     # Plot the phase.
-    axs[0].set_title("SLM Phase")
-    im = axs[0].imshow(
+    ax.set_title(title)
+    im = ax.imshow(
         np.mod(phase, 2*np.pi),
         vmin=0,
         vmax=2*np.pi,
         interpolation="none",
         cmap="twilight"
     )
-    plt.colorbar(im, ax=axs[0])
+    plt.colorbar(im, ax=ax)
 
     # Make a title, if given.
-    plt.suptitle(title)
     path = os.path.join(os.getcwd(), 'static', 'images', name)
     plt.savefig(path)
     plt.close()

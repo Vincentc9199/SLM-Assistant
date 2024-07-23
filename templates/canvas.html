@@ -5,18 +5,15 @@
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('manual') }}">Manual Input</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice Box</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('canvas') }}">Canvas</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('feedback') }}">Feedback</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('canvas') }}">Canvas</a></li>
     </ul>
 </div>
 
 
-<h5 class="ms-2 mt-2">Select Targets (Camera Space)</h5>
+<h5 class="ms-2 mt-2">Select Targets (Andor Coordinates)</h5>
 
 <!-- Div for user input of center coords and grid spacing-->
 <div class="center-coords input-group p-2">
@@ -35,11 +32,11 @@
     <input type="number" id="height" value="500" class="form-control">
 </div>
 
-<!-- Text for hover coordinates-->
-<p class="ms-2" id="hoverCoordinates">Hover coordinates: (0, 0)</p>
-
 <!-- Canvas, has a hardcoded width and height-->
 <canvas class="border ms-2" id="pointCanvas" width="500" height="500"></canvas>
+
+<!-- Text for hover coordinates-->
+<p class="ms-2" id="hoverCoordinates">Hover coordinates: (0, 0)</p>
 
 <div>
     <button class="btn btn-outline-danger m-2" type="button" onclick="removePoint()">Remove Point</button>
@@ -55,36 +52,13 @@
         <ul class="list-group list-group-flush list-group-numbered" id="pointsList"></ul>
     </div>
 
-    <!--
-    <div class="row p-2">
-        <div class="col">
-            <div class="form-floating">
-                <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-                <label for="iteration_number"># of Iterations</label>
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-floating">
-                <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
-                <label for="save_name">Save Name</label>
-            </div>
-        </div>
-        <div class="col">
-            <div class="form-floating">
-                <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess Name">
-                <label for="guess_name">Initial Guess</label>
-            </div>
-        </div>
-    </div>
-    -->
-    <!--
-    <input class="form-control" type="text" id="camera" name="camera" placeholder="Enter 'yes' or 'no'">
-    -->
-    <button class="btn btn-outline-primary m-2" type="button" onclick="submitPoints()">Submit Points</button>
+    <select class="form-select mb-2" name="coord_type" id="coord_type">
+        <option id="coord_type_option">Coordinate Type</option>
+        <option id="andor" value="andor">Andor Camera</option>
+    </select>
 
-    <div class="progress" role="progressbar">
-        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
-    </div>
+    <button class="btn btn-outline-primary m-2" type="button" onclick="submitPoints()">Create Hologram</button>
+
 </form>
 
 
@@ -149,43 +123,6 @@
         // Width of the gridlines
         ctx.lineWidth = 1;
 
-        // Starts with x being the center of the canvas
-        // While x is less than the width of the canvas
-        // Add the grid spacing to x
-        /*
-        for (let x = centerX; x <= canvas.width; x += gridSpacing) {
-            // Declare we are drawing a new path
-            ctx.beginPath();
-            // Start the line at the x coordinate and at the top
-            ctx.moveTo(x, 0);
-            // Move it down to the bottom of the canvas
-            ctx.lineTo(x, canvas.height);
-            // Fill the line
-            ctx.stroke();
-        }
-
-        // Same thing but removing the grid spacing, so going to the left
-        for (let x = centerX; x >= 0; x -= gridSpacing) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
-            ctx.stroke();
-        }
-
-        // Same thing but for y
-        for (let y = centerY; y <= canvas.height; y += gridSpacing) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
-            ctx.stroke();
-        }
-        for (let y = centerY; y >= 0; y -= gridSpacing) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
-            ctx.stroke();
-        }
-        */
         for (let x = 0; x <= canvas.width; x += gridSpacing) {
             // Declare we are drawing a new path
             ctx.beginPath();
@@ -312,17 +249,14 @@
         // Get list of amplitudes
         amplitudes = points.map(p => p.amplitude);
         
-        //iteration_number = document.getElementById('iteration_number').value;
-        //guess_name = document.getElementById('guess_name').value;
-        //save_name = document.getElementById('save_name').value;
-        //camera = document.getElementById('camera').value;
+        coord_type = document.getElementById('coord_type').value;
 
         fetch('/submit_points', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({Coords1, Coords2, amplitudes}),
+            body: JSON.stringify({Coords1, Coords2, amplitudes, coord_type}),
         })
         .then(response => response.json())
         .then(data => {
@@ -344,165 +278,10 @@
     drawGrid();
 
     // Update grid when center coordinates or grid size change
-    //centerCoord1.addEventListener('change', drawGrid);
-    //centerCoord2.addEventListener('change', drawGrid);
     gridSpacingInput.addEventListener('change', drawGrid);
     widthInput.addEventListener('change', resizeCanvas);
     heightInput.addEventListener('change', resizeCanvas);
 </script>
 
-<script>
-    var socket = io();
-    socket.on('progress', function(data) {
-        var progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = data.progress + '%';
-        progressBar.innerHTML = data.progress.toFixed(2) + '%';
-        console.log('Received progress');  // Debug statement
-    });
-
-    socket.on('connect', function() {
-        console.log('Connected to server');  // Debug statement
-    });
-</script>
-
 {% endblock %}
-<!--
-        <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-        <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
-        <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess">
-        <input class="form-check-input" type="checkbox" id="camera" name="camera" value="yes">
-        <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
-        <input type="hidden" name="camera" value="no">
-        -->
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!--
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Select Points</title>
-    <style>
-        canvas { border: 1px solid black; }
-        .points-list { margin-top: 10px; }
-        .center-coords { margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-    <h1>Select Points</h1>
-    <div class="center-coords">
-        <label for="centerX">Center X:</label>
-        <input type="number" id="centerX" value="250">
-        <label for="centerY">Center Y:</label>
-        <input type="number" id="centerY" value="250">
-    </div>
-    <canvas id="pointCanvas" width="500" height="500"></canvas>
-    <p id="hoverCoordinates">Hover coordinates: (0, 0)</p>
-    <form id="pointsForm" method="POST" action="/submit_points">
-        <div class="points-list">
-            <h2>Selected Points</h2>
-            <ul id="pointsList"></ul>
-        </div>
-        <button type="button" onclick="submitPoints()">Submit Points</button>
-    </form>
-    <script>
-        const canvas = document.getElementById('pointCanvas');
-        const ctx = canvas.getContext('2d');
-        const hoverCoordinates = document.getElementById('hoverCoordinates');
-        const pointsList = document.getElementById('pointsList');
-        const centerXInput = document.getElementById('centerX');
-        const centerYInput = document.getElementById('centerY');
-
-        let points = [];
-        let xCoords = [];
-        let yCoords = [];
-        let amplitudes = [];
-
-        // Update hover coordinates
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.bottom;
-            const centerX = parseInt(centerXInput.value, 10);
-            const centerY = parseInt(centerYInput.value, 10);
-            const adjustedX = x - centerX;
-            const adjustedY = y - centerY; // Invert y-coordinate
-            hoverCoordinates.textContent = `Hover coordinates: (${adjustedX}, ${adjustedY})`;
-        });
-
-        // Select points
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.bottom;
-            const centerX = parseInt(centerXInput.value, 10);
-            const centerY = parseInt(centerYInput.value, 10);
-            const adjustedX = x - centerX;
-            const adjustedY = y - centerY; // Invert y-coordinate
-            points.push({x: adjustedX, y: adjustedY, amplitude: 1}); // Default amplitude is 1
-            updatePointsList();
-            drawPoint(x, y);
-        });
-
-        // Draw a point on the canvas
-        function drawPoint(x, y) {
-            ctx.fillStyle = 'red';
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Update the points list display
-        function updatePointsList() {
-            pointsList.innerHTML = '';
-            points.forEach((point, index) => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `Point (${point.x}, ${point.y}): <input type="number" value="${point.amplitude}" onchange="updateAmplitude(${index}, this.value)">`;
-                pointsList.appendChild(listItem);
-            });
-        }
-
-        // Update amplitude for a point
-        function updateAmplitude(index, value) {
-            points[index].amplitude = value;
-        }
-
-        // Submit points to the server
-        function submitPoints() {
-            xCoords = points.map(p => p.x);
-            yCoords = points.map(p => p.y);
-            amplitudes = points.map(p => p.amplitude);
-
-            fetch('/submit_points', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({xCoords, yCoords, amplitudes}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
-    </script>
-</body>
-</html>
--->

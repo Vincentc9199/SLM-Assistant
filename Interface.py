@@ -74,9 +74,8 @@ class SLMSuiteInterface:
         self.camera_settings = camera_settings
         return camera
 
-    def set_hologram(self, computational_shape, target_spot_array, target_amps=None, socketio=None):
-        if self.cameraslm is not None:
-            self.hologram = slmsuite.holography.algorithms.SpotHologram(shape=computational_shape, spot_vectors=target_spot_array, spot_amp=target_amps, basis='knm', cameraslm=self.cameraslm, socketio=socketio)
+    def set_hologram(self, computational_shape, target_spot_array, target_amps=None, basis='knm', socketio=None):
+        self.hologram = slmsuite.holography.algorithms.SpotHologram(shape=computational_shape, spot_vectors=target_spot_array, spot_amp=target_amps, basis=basis, cameraslm=self.cameraslm, socketio=socketio)
 
     def set_slm_amplitude(self, amp):
         """
@@ -148,14 +147,14 @@ class SLMSuiteInterface:
         else:
             return full_path, full_path2, 0
 
-    def optimize(self, n_iters, method="WGS-Kim"):
+    def optimize(self, n_iters):
         if self.cameraslm is not None:
             ntargets = len(self.hologram.spot_knm[0])
             #print(ntargets)
             if ntargets == 1:
                 self.hologram.optimize(method="GS", maxiter=n_iters, feedback='computational_spot', stat_groups=['computational'])
             else:
-                self.hologram.optimize(method=method, maxiter=n_iters, feedback='computational_spot', stat_groups=['computational_spot'])
+                self.hologram.optimize(method="WGS-Kim", maxiter=n_iters, feedback='computational_spot', stat_groups=['computational_spot'])
 
     def init_hologram(self, path, computational_shape):
         _,data = utils.load_slm_calculation(path, 1, 1)
@@ -287,14 +286,12 @@ class SLMSuiteInterface:
         else:
             return -1
 
-    def plot_farfield(self, amp=None, phase=None, plot_target=None):
+    def plot_farfield(self, amp=None, phase=None):
         """
 
         """
         if self.hologram is not None:
-            if plot_target is True:
-                self.hologram.plot_farfield(self.hologram.target, cbar=True, title='Target', for_target=True, save_img=True)
-            elif (amp is None) and (phase is None):
+            if (amp is None) and (phase is None):
                 self.hologram.plot_farfield(cbar=True, save_img=True)
             else:
                 farfield,_ = self.get_farfield(amp, phase)
@@ -302,6 +299,9 @@ class SLMSuiteInterface:
             return 0
         else:
             return -1
+
+    def plot_target(self):
+        self.hologram.plot_farfield(source=self.hologram.target, cbar=True, title='Target Hologram', save_img=True, for_target=True)
 
     def plot_stats(self):
         """
@@ -324,7 +324,7 @@ class SLMSuiteInterface:
             self.cameraslm.slm.write(base, name, settle=True)
 
     def perform_fourier_calibration(self, shape=[5,5], pitch=[30,40]):
-        self.cameraslm.fourier_calibrate(array_shape=shape, array_pitch=pitch, plot=True)
+        self.cameraslm.fourier_calibrate(array_shape=shape, array_pitch=pitch)
         self.fourier_calibration_source = 'unsaved'
         return 0
 

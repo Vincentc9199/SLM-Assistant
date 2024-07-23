@@ -5,31 +5,8 @@
 {% block content %}
 
 <div class="container-fluid p-2">
-    <div class="row mb-3">
-        <div class="col">
-            {% if slm_list or camera_list %}
-            <h5>Select SLM and Camera</h5>
-                <form action="{{ url_for('setup_iface') }}" method="POST">
-                    <div class="input-group">
-                        <select class="form-select" aria-label="Default select example" name="slm_num">
-                            {% for slm_dict in slm_list %}
-                            <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Display Number: {{ slm_dict['display_num']}}</option>
-                            {% endfor %}
-                        </select>
-                        <select class="form-select" aria-label="Default select example" name="camera_num">
-                            {% for camera_dict in camera_list %}
-                            <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Camera Type: {{ camera_dict['camera_type'] }}, Serial: {{ camera_dict['serial_num'] }} </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-outline-primary">Select SLM and Camera</button>
-                    </div>
-                </form>
-            {% endif %}
-        </div>
-    </div>
-
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col">
             <h5 class="text-left text-dark ms-2">Phase Info</h5>
             
             <table class="table table-bordered table-hover">
@@ -66,6 +43,12 @@
                 {% endif %}
             </table>
             
+            {% if phase_info %}
+            <div class="p-3">
+                <img src="{{ url_for('static', filename='images/total-phase.png') }}" class="img-fluid rounded" alt="Hologram Target">
+            </div>
+            {% endif %}
+
             {% if phase_info[0] %}
             
             <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -97,7 +80,7 @@
                                 textposition: 'top center'
                             };
                             const layout = {
-                                title: 'Intended Target (k-space) of Base Pattern',
+                                title: 'Target of Loaded Base Phase',
                                 xaxis: { title: 'k-x' },
                                 yaxis: { title: 'k-y' },
                                 autosize: true
@@ -109,223 +92,22 @@
             </script>
             
             {% endif %}
-
-            {% if iface.hologram %}
-            <!--
-            <div class="p-3">
-                <img src="{{ url_for('static', filename='images/target.png') }}" class="img-fluid rounded" alt="Hologram Target">
-            </div>
-            -->
-            {% endif %}
         </div>
 
         <div class="col-sm-6">
-            <h5 class="text-left text-dark ms-2">SLM Settings</h5>
-            <table class="table table-bordered table-hover text-center">
-                <thead>
-                    <tr class="align-middle">
-                        <th>Display Number</th>
-                        <th>Bitdepth</th>
-                        <th>Design Wavelength</th>
-                        <th>Wavelength</th>
-                    </tr>
-                </thead>
-                {% if slm_settings %}
-                <tbody>
-                    <tr class="align-middle">
-                        <td>{{ slm_settings['display_num'] }}</td>
-                        <td>{{ slm_settings['bitdepth'] }}</td>
-                        <td>{{ slm_settings['wav_design_um'] }}</td>
-                        <td>{{ slm_settings['wav_um'] }}</td>
-                    </tr>
-                </tbody>
-                {% endif %}
-            </table>
-
-            <h5 class="text-left text-dark ms-2">Camera Settings</h5>
-            <table class="table table-bordered table-hover text-center">
-                <thead>
-                    <tr class="align-middle">
-                        <th>Camera Type</th>
-                        <th>Serial Number</th>
-                        <th>Fliplr</th>
-                    </tr>
-                </thead>
-                {% if camera_settings %}
-                <tbody>
-                    <tr class="align-middle">
-                        <td>{{ camera_settings['camera_type'] }}</td>
-                        <td>{{ camera_settings['serial_num'] }}</td>
-                        <td>{{ camera_settings['fliplr'] }}</td>
-                    </tr>
-                </tbody>
-                {% endif %}
-            </table>
-            
             {% if slm_settings and not slm_settings['display_num'] == 'virtual' %}
                 <form action="{{ url_for('project') }}" method="POST">
                     <div class="d-grid">
                         <button type="submit" class="btn btn-outline-primary">Project</button>
                     </div>
                 </form>
-            {% endif %}
             
-
-            {% if slm_settings and not slm_settings['display_num'] == 'virtual' %}
             <div class="p-3">
                 <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" class="img-fluid rounded" alt="Screenshot of the SLM">
             </div>
             {% endif %}
-            <div class="p-3">
-                <img src="{{ url_for('static', filename='images/total-phase.png') }}" class="img-fluid rounded" alt="Hologram Target">
-            </div>
         </div>
     </div>
 </div>
-
-<!-- 
-<div class="row text-center h3">
-    <div class="col-sm-6">Calculation Settings</div>
-    <div class="col-sm-6">SLM Settings</div>
-</div>
-
-<div class="row text-center">
-    <div class="col-sm-6">
-        <table class="table table-striped table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Pattern File Path</th>
-                    <th>Computational Space</th>
-                    <th>Number of Iterations</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ pattern_path }}</td>
-                    <td>{{ computational_space }}</td>
-                    <td>{{ n_iterations }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="col-sm-6">
-        <table class="table table-striped table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>Display Number</th>
-                    <th>Bitdepth</th>
-                    <th>Design Wavelength</th>
-                    <th>Wavelength</th>
-                </tr>
-            </thead>
-            {% if current_slm_settings %}
-            <tbody>
-                <tr>
-                    <td>{{ current_slm_settings['display_num'] }}</td>
-                    <td>{{ current_slm_settings['bitdepth'] }}</td>
-                    <td>{{ current_slm_settings['wav_design_um'] }}</td>
-                    <td>{{ current_slm_settings['wav_um'] }}</td>
-                </tr>
-            </tbody>
-            {% endif %}
-        </table>
-    </div>
-</div>
-
-<div class="row text-center h3">
-    <div class="col-sm-6">Phase Breakdown</div>
-    <div class="col-sm-3">Select SLM</div>
-    <div class="col-sm-3">Project</div>
-</div>
-
-<div class="row">
-    <div class="col-sm-6">
-        <table class="table table-striped table-bordered table-hover">
-            <tr>
-                <th>Base:</th>
-                {% if current_phase_info %}
-                <td>{{ current_phase_info[0] }}</td>
-                {% endif %}
-            </tr>
-            <tr>
-                <th>Additional:</th>
-                {% if current_phase_info %}
-                {% for entry in current_phase_info[1] %}
-                <td>{{ entry }}</td>
-                {% endfor %}
-                {% endif %}
-            </tr>
-            <tr>
-                <th>Aperture:</th>
-                {% if current_phase_info %}
-                <td>{{ current_phase_info[2] }}</td>
-                {% endif %}
-            </tr>
-        </table>
-    </div>
-
-    <div class="col-sm-3">
-        {% if slm_list %}
-            <form action="{{ url_for('setup_iface') }}" method="POST">
-                {% for slm_dict in slm_list %}
-                <input type="radio" name="slm_num" id="{{ loop.index0 }}" value="{{ loop.index0 }}"> Display Number: {{ slm_dict['display_num']}} </input><br>
-                {% endfor %}
-                <input type="submit" value="Select SLM">
-            </form>
-        {% endif %}
-    </div>
-
-    <div class="col-sm-3">
-        {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
-            <form action="{{ url_for('project') }}" method="POST">
-                <button type="submit">Project to SLM</button>
-            </form>
-        {% endif %}
-    </div>
-</div>
-
-<div class="row text-center h3">
-    <div class="col-sm-6">Target Pattern</div>
-    <div class="col-sm-6">SLM Screenshot</div>
-</div>
-
-<div class="row text-center h3">
-    <div class="col-sm-6">
-        
-            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-            <div id="plot" style="width: 100%; height: 50vh;"></div>
-            <script>
-                fetch('/display_targets')
-                    .then(response => response.json())
-                    .then(data => {
-                        const trace = {
-                            x: data.x,
-                            y: data.y,
-                            mode: 'markers+text',
-                            type: 'scatter',
-                            text: data.labels, // Add text labels
-                            textposition: 'top center'
-                        };
-                        const layout = {
-                            title: 'Intended Target Array',
-                            xaxis: { title: 'k-x' },
-                            yaxis: { title: 'k-y' },
-                            width: 800,
-                            height: 800
-                        };
-                        Plotly.newPlot('plot', [trace], layout);
-                    });
-            </script>
-       
-    </div>
-    <div class="col-sm-6">
-        {% if current_slm_settings and not current_slm_settings['display_num'] == 'virtual' %}
-            <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" class=" img-fluid rounded" alt="Screenshot of the SLM">
-        {% endif %}
-    </div>
-</div>
--->
 
 {% endblock %}

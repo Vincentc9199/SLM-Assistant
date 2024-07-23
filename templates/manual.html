@@ -5,13 +5,10 @@
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('manual') }}">Manual Input</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice Box</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('manual') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('lattice_box') }}">Lattice</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('grid') }}">Grid</a></li>
         <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('canvas') }}">Canvas</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('feedback') }}">Feedback</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('targets') }}">Plot Targets</a></li>
     </ul>
 </div>
 
@@ -58,63 +55,15 @@
         <div class="text-end mb-3">
             <button type="button" class="btn btn-outline-secondary" onclick="addPoint()">Add Point</button>
         </div>
-        
-        <!--
-        <div class="row">
-            <div class="col">
-                <div class="form-floating">
-                    <input class="form-control" type="number" id="iteration_number" name="iteration_number" placeholder="# of Iterations">
-                    <label for="iteration_number"># of Iterations</label>
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-floating">
-                    <input class="form-control" type="text" id="save_name" name="save_name" placeholder="Save Name" required>
-                    <label for="save_name">Save Name</label>
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-floating">
-                    <input class="form-control" type="text" id="guess_name" name="guess_name" placeholder="Initial Guess Name">
-                    <label for="guess_name">Initial Guess</label>
-                </div>
-            </div>
-        </div>
-        -->
-        <div class="form-check form-switch mt-3">
-            <input class="form-check-input" type="checkbox" id="camera" name="camera" value="yes">
-            <label class="form-check-label" for="camera">Camera Pixel Coordinates</label>
-        </div>
-        <input type="hidden" name="camera" value="no">
 
-        <button type="submit" class="btn btn-outline-primary mt-1">Start Calculation</button>
+        <select class="form-select" name="coord_type">
+            <option id="coord_type">Coordinate Type</option>
+            <option id="k-space" value="k-space">SLM k-space</option>
+            <option id="andor" value="andor">Andor Camera</option>
+        </select>
+
+        <button type="submit" class="btn btn-outline-primary mt-1">Create Hologram</button>
 
     </form>
 </div>
-
-<script>
-    var socket = io();
-    socket.on('progress', function(data) {
-        var progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = data.progress + '%';
-        progressBar.innerHTML = data.progress.toFixed(2) + '%';
-        console.log('Received progress');  // Debug statement
-    });
-
-    socket.on('connect', function() {
-        console.log('Connected to server');  // Debug statement
-    });
-</script>
-
-<!--
-<div class="row">
-    <div class="col-6">
-        <img src="{{ url_for('static', filename='images/slmplane.png') }}" class="img-fluid" alt="Nearfield Plot">
-        <img src="{{ url_for('static', filename='images/farfield.png') }}" class="img-fluid" alt="Farfield Plot">
-    </div>
-    <div class="col-6">
-        <img src="{{ url_for('static', filename='images/stats.png') }}" class="img-fluid" alt="Statistics Plot">
-    </div>
-</div>
--->
 {% endblock %}

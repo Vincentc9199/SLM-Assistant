@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Load from File - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('calculate') }}">Calculate Base</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('input_additional') }}">Input Additional</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('load_from_file') }}">Load from File</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('phase_summary') }}">Phase Info</a></li>
+    </ul>
+</div>
+
+<div class="container-fluid p-2">
+    <div class="row">
+        <div class="col">
+            <h5 class="ms-2">Upload Base Phase</h5>
+            <form action="{{ url_for('use_pattern') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
+                        <label for="fname">File Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Base Pattern</button>
+                </div>
+            </form>
+            {% if base_load_history %}
+            <h5>History of Loaded Base Phase</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in base_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+
+        <div class="col">
+            <h5>Upload Additional Phase</h5>
+            <form action="{{ url_for('use_add_phase') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
+                        <label for="fname">File Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Additional Phase</button>
+                </div>
+            </form>
+            
+            <h5>Upload Base Phase as Additional</h5>
+            <form action="{{ url_for('add_pattern_to_add_phase') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="fname" name="fname" placeholder="File Name">
+                        <label for="fname">File Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Base Phase as Additional</button>
+                </div>
+            </form>
+
+            <h5>Upload Manufacturer Correction</h5>
+            <form action="{{ url_for('correction') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="fname" name="fname" placeholder="Manufacturer Correction FIle Name">
+                        <label for="fname">Manufacturer Correction FIle Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Manufacturer Correction</button>
+                </div>
+            </form>
+            
+            {% if additional_load_history %}
+            <h5>History of Loaded Additional Patterns</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in additional_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+
+            <h5>Save Additional Phase</h5>
+            <form action="{{ url_for('save_add_phase') }}" method="POST">
+                <div class="input-group">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                        <label for="fname">Save Name</label>
+                    </div>
+                    <button class="btn btn-outline-primary" type="submit">Save Additional Phase</button>
+                </div>
+            </form>
+
+            {% if additional_save_history %}
+            <h5>History of Saved Additional Patterns</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in additional_save_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

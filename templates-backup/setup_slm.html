@@ -5,11 +5,10 @@
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calibration') }}">Manual Calibration</a></li>
-        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('setup_slm') }}">Connect to SLM</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Connect to Camera</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_iface') }}">Interface</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
     </ul>
 </div>
 
@@ -42,28 +41,5 @@
             </ul>
         </div>
     </form>
-
-    <table class="table table-bordered table-hover text-center mt-5">
-        <thead>
-            <tr class="align-middle">
-                <th>Display Number</th>
-                <th>Bitdepth</th>
-                <th>Design Wavelength</th>
-                <th>Wavelength</th>
-            </tr>
-        </thead>
-        {% if slm_list %}
-        <tbody>
-            {% for slm_settings in slm_list %}
-            <tr class="align-middle">
-                <td>{{ slm_settings['display_num'] }}</td>
-                <td>{{ slm_settings['bitdepth'] }}</td>
-                <td>{{ slm_settings['wav_design_um'] }}</td>
-                <td>{{ slm_settings['wav_um'] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        {% endif %}
-    </table>
 </div>
 {% endblock %}

@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Setup Camera - SLM Assistant{% endblock %}
+{% block title %}Setup Camera{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calibration') }}">Manual Calibration</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Connect to SLM</a></li>
-        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('setup_camera') }}">Connect to Camera</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_iface') }}">Interface</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
     </ul>
 </div>
 
@@ -24,10 +23,9 @@
             </select>
             
             <div class="form-floating">
-                <input type="text" id="serial_num" name="serial_num" class="form-control" placeholder="Serial Number" required>
+                <input type="text" id="serial_num" name="serial_num" class="form-control" placeholder="Serial Number">
                 <label for="serial_num">Serial Number</label>
             </div>
-
             <select class="form-select" aria-label="Default select example" name="fliplr">
                 <option id="fliplr">Fliplr</option>
                 <option id="true" value="True">True</option>
@@ -43,26 +41,7 @@
             </ul>
         </div>
     </form>
-
-    <table class="table table-bordered table-hover text-center mt-5">
-        <thead>
-            <tr class="align-middle">
-                <th>Camera Type</th>
-                <th>Serial Number</th>
-                <th>Fliplr</th>
-            </tr>
-        </thead>
-        {% if camera_list %}
-        <tbody>
-            {% for camera_settings in camera_list %}
-            <tr class="align-middle">
-                <td>{{ camera_settings['camera_type'] }}</td>
-                <td>{{ camera_settings['serial_num'] }}</td>
-                <td>{{ camera_settings['fliplr'] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        {% endif %}
-    </table>
 </div>
+
 {% endblock %}
+

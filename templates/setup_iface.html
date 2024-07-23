@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Interface - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calibration') }}">Manual Calibration</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Connect to SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Connect to Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('setup_iface') }}">Interface</a></li>
+    </ul>
+</div>
+
+<div class="container-fluid p-2">
+    
+    {% if slm_list or camera_list %}
+    <h5>Select SLM and Camera for the Interface</h5>
+        <form class="mb-5" method="POST">
+            <div class="input-group">
+                <select class="form-select" aria-label="Default select example" name="slm_num">
+                    {% for slm_dict in slm_list %}
+                    <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Display Number: {{ slm_dict['display_num']}}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select" aria-label="Default select example" name="camera_num">
+                    {% for camera_dict in camera_list %}
+                    <option id="{{ loop.index0 }}" value="{{ loop.index0 }}">Camera Type: {{ camera_dict['camera_type'] }}, Serial: {{ camera_dict['serial_num'] }} </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Select SLM and Camera</button>
+            </div>
+        </form>
+    {% endif %}
+       
+       
+    <h5 class="text-left text-dark ms-2 mt-2">Interface SLM Settings</h5>
+    <table class="table table-bordered table-hover text-center">
+        <thead>
+            <tr class="align-middle">
+                <th>Display Number</th>
+                <th>Bitdepth</th>
+                <th>Design Wavelength</th>
+                <th>Wavelength</th>
+            </tr>
+        </thead>
+        {% if slm_settings %}
+        <tbody>
+            <tr class="align-middle">
+                <td>{{ slm_settings['display_num'] }}</td>
+                <td>{{ slm_settings['bitdepth'] }}</td>
+                <td>{{ slm_settings['wav_design_um'] }}</td>
+                <td>{{ slm_settings['wav_um'] }}</td>
+            </tr>
+        </tbody>
+        {% endif %}
+    </table>
+
+    <h5 class="text-left text-dark ms-2 mt-2">Interface Camera Settings</h5>
+    <table class="table table-bordered table-hover text-center">
+        <thead>
+            <tr class="align-middle">
+                <th>Camera Type</th>
+                <th>Serial Number</th>
+                <th>Fliplr</th>
+            </tr>
+        </thead>
+        {% if camera_settings %}
+        <tbody>
+            <tr class="align-middle">
+                <td>{{ camera_settings['camera_type'] }}</td>
+                <td>{{ camera_settings['serial_num'] }}</td>
+                <td>{{ camera_settings['fliplr'] }}</td>
+            </tr>
+        </tbody>
+        {% endif %}
+    </table>
+            
+</div>
+
+{% endblock %}

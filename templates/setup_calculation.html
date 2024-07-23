@@ -5,20 +5,18 @@
 {% block content %}
 <div class="container-fluid p-2">
     <ul class="nav nav-tabs">
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
-        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
-        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calibration') }}">Manual Calibration</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Connect to SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Connect to Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_iface') }}">Interface</a></li>
     </ul>
 </div>
 
 <div class="container-fluid mb-3 p-2">
-    <h5 class="ms-2">Calculation Settings</h5>
+    <h5 class="ms-2"> Default Calculation Settings</h5>
     <form method="POST">
-        <div class="input-group">
-            <!--
-            <input type="text" id="main_path" name="main_path" class="form-control" placeholder="File Path for Loading">
-            -->
+        <div class="input-group mb-5">
             <div class="form-floating">
                 <input type="number" id="computational_space" name="computational_space" class="form-control" placeholder="Size of Computational Space">
                 <label for="computational_space">Size of Computational Space</label>
@@ -27,39 +25,23 @@
                 <input type="number" id="n_iterations" name="n_iterations" class="form-control" placeholder="Default # of Iterations for GS">
                 <label for="n_iterations">Default # of Iterations</label>
             </div>
-            <button type="submit" class="btn btn-outline-primary">Submit Calculation Settings</button>
+            <button type="submit" class="btn btn-outline-primary">Submit Default Calculation Settings</button>
         </div>
     </form>
-</div>
 
-<div class="container-fluid p-2">
-    <h5 class="ms-2">Calibration (Camera to K-space)</h5>
-    <form action="{{ url_for('setup_calibration') }}" method="POST">
-        <div class="form-group mb-2">
-            <div class="row mb-2">
-                <div class="col">
-                    <input type="number" id="top_left" name="top_left" class="form-control" step="any" placeholder="A11">
-                </div>
-                <div class="col">
-                    <input type="number" id="top_right" name="top_right" class="form-control" step="any" placeholder="A12">
-                </div>
-                <div class="col">
-                    <input type="number" id="vector_x" name="vector_x" class="form-control" step="any" placeholder="b1">
-                </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                    <input type="number" id="bottom_left" name="bottom_left" class="form-control" step="any" placeholder="A21">
-                </div>
-                <div class="col">
-                    <input type="number" id="bottom_right" name="bottom_right" class="form-control" step="any" placeholder="A22">
-                </div>
-                <div class="col">
-                    <input type="number" id="vector_y" name="vector_y" class="form-control" step="any" placeholder="b2"> 
-                </div>
-            </div>
-        </div>
-        <button type="submit" class="btn btn-outline-primary">Submit Calibration</button>
-    </form>
+    <table class="table table-bordered table-hover text-center">
+        <thead class="align-middle">
+            <tr>
+                <th>Computational Space</th>
+                <th> Default # of Iterations</th>
+            </tr>
+        </thead>
+        <tbody class="align-middle">
+            <tr>
+                <td>{{ computational_space }}</td>
+                <td>{{ n_iterations }}</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 {% endblock %}

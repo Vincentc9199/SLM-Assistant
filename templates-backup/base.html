@@ -13,7 +13,7 @@
 
     <header>
         <div class="container-fluid p-2 bg-dark text-bg-dark">
-            <h1 class="display-6">SLM Assistant <span class="badge bg-secondary-subtle text-dark">2.4.0</span></h1>
+            <h1 class="display-6">SLM Assistant <span class="badge bg-secondary-subtle text-dark">2.3.2</span></h1>
         </div>
     </header>
 
@@ -30,29 +30,30 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Setup</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('setup_calibration') }}"> Manual Calibration</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('setup_slm') }}"> Connect to SLM</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('setup_camera') }}"> Connect to Camera</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('setup_iface') }}"> Interface</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Hologram</a>
+                        <a class="nav-link dropdown-toggle" href="{{ url_for('base_pattern') }}" role="button" data-bs-toggle="dropdown">Base Pattern</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('manual') }}">Manual Input</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('lattice_box') }}">Lattice</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('grid') }}">Grid</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('canvas') }}">Canvas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('base_pattern') }}">Base Pattern Hub</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('manual') }}">Targets - Manual Input</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('lattice_box') }}">Targets - Lattice Box</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('grid') }}">Targets - Grid</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('canvas') }}">Targets - Canvas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('feedback') }}">Targets - Feedback</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('targets') }}">Plot Target</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('calculate_page') }}">Calculate</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Phase Manager</a>
+                        <a class="nav-link dropdown-toggle" href="{{ url_for('additional_pattern') }}" role="button" data-bs-toggle="dropdown">Additional Patterns</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('calculate') }}">Calculate Base</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('input_additional') }}">Input Additional</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('load_from_file') }}">Load from File</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('phase_summary') }}">Phase Info</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('additional_pattern') }}">Additional Patterns Hub</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('input_additional') }}">Input Additional Patterns</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">

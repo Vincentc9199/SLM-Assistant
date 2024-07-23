@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Configs - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <div class="row">
+        <div class="col">
+            <h5>Load Config</h5>
+            <form action="{{ url_for('load_config') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="filename" name="filename" placeholder=" Config File Name">
+                        <label for="filename">Config File Name</label>
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">Upload Config</button>
+                </div>
+            </form>
+            {% if config_load_history %}
+            <h5>History of Loaded Configs</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in config_load_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+        <div class="col">
+            <h5>Save Config</h5>
+            <form action="{{ url_for('save_config') }}" method="POST">
+                <div class="input-group mb-2">
+                    <div class="form-floating">
+                        <input class="form-control" type="text" id="save_name" name="save_name" required placeholder="Save Name">
+                        <label for="save_name">Config Save Name</label>
+                    </div>
+                    <button class="btn btn-outline-primary" type="submit">Save Config</button>
+                </div>
+            </form>
+            {% if config_save_history %}
+            <h5>History of Saved Configs</h5>
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                {% for entry in config_save_history %}
+                <tbody>
+                    <tr>
+                        <td>{{ entry.fname }}</td>
+                        <td>{{ entry.upload_time }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

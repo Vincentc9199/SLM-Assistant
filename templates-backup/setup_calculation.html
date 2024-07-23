@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Calculation - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Setup SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Setup Camera</a></li>
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('setup_calculation') }}">Setup Calculation</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm_amp') }}">Setup SLM Amplitude</a></li>
+    </ul>
+</div>
+
+<div class="container-fluid mb-3 p-2">
+    <h5 class="ms-2">Calculation Settings</h5>
+    <form method="POST">
+        <div class="input-group">
+            <div class="form-floating">
+                <input type="number" id="computational_space" name="computational_space" class="form-control" placeholder="Size of Computational Space">
+                <label for="computational_space">Size of Computational Space</label>
+            </div>
+            <div class="form-floating">
+                <input type="number" id="n_iterations" name="n_iterations" class="form-control" placeholder="Default # of Iterations for GS">
+                <label for="n_iterations">Default # of Iterations</label>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Submit Calculation Settings</button>
+        </div>
+    </form>
+</div>
+
+<div class="container-fluid p-2">
+    <h5 class="ms-2">Calibration (Camera to K-space)</h5>
+    <form action="{{ url_for('setup_calibration') }}" method="POST">
+        <div class="form-group mb-2">
+            <div class="row mb-2">
+                <div class="col">
+                    <input type="number" id="top_left" name="top_left" class="form-control" step="any" placeholder="A11" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="top_right" name="top_right" class="form-control" step="any" placeholder="A12" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="vector_x" name="vector_x" class="form-control" step="any" placeholder="b1" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <input type="number" id="bottom_left" name="bottom_left" class="form-control" step="any" placeholder="A21" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="bottom_right" name="bottom_right" class="form-control" step="any" placeholder="A22" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="vector_y" name="vector_y" class="form-control" step="any" placeholder="b2" required> 
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-outline-primary">Submit Calibration</button>
+    </form>
+</div>
+{% endblock %}

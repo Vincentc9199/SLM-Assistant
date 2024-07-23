@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Manual Calibration - SLM Assistant{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-2">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_calculation') }}">Calculation Settings</a></li>
+        <li class="nav-item"><a class="nav-link text-body active" href="{{ url_for('setup_calibration') }}">Manual Calibration</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_slm') }}">Connect to SLM</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_camera') }}">Connect to Camera</a></li>
+        <li class="nav-item"><a class="nav-link text-body" href="{{ url_for('setup_iface') }}">Interface</a></li>
+    </ul>
+</div>
+
+
+<div class="container-fluid p-2">
+    <h5 class="ms-2">Manual Calibration (Andor to K-space)</h5>
+    <form method="POST">
+        <div class="form-group mb-2">
+            <div class="row mb-2">
+                <div class="col">
+                    <input type="number" id="top_left" name="top_left" class="form-control" step="any" placeholder="A11" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="top_right" name="top_right" class="form-control" step="any" placeholder="A12" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="vector_x" name="vector_x" class="form-control" step="any" placeholder="b1" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <input type="number" id="bottom_left" name="bottom_left" class="form-control" step="any" placeholder="A21" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="bottom_right" name="bottom_right" class="form-control" step="any" placeholder="A22" required>
+                </div>
+                <div class="col">
+                    <input type="number" id="vector_y" name="vector_y" class="form-control" step="any" placeholder="b2" required> 
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-outline-primary">Submit Calibration</button>
+    </form>
+
+    <table class="table table-bordered text-center mt-5">
+        <tr>
+            <td>{{ A[0][0] }}</td>
+            <td>{{ A[0][1] }}</td>
+            <td>{{ b[0] }}</td>
+        </tr>
+        <tr>
+            <td>{{ A[1][0] }}</td>
+            <td>{{ A[1][1] }}</td>
+            <td>{{ b[1] }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}
