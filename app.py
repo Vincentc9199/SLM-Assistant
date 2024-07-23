@@ -972,7 +972,7 @@ def submit_points():
 
 # CREATE A HOLOGRAM FROM THE COORDINATES AND AMPLITUDES IN A FILE
 
-"""
+
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     global directory, iface
@@ -982,12 +982,6 @@ def feedback():
 
             fname = request.form['fname']
             input_amps = request.form['input_amps']
-
-            try:
-                fname = str(fname)
-                input_amps = str(input_amps)
-            except:
-                print("data type issue")
             
             path = os.path.join(directory, 'data', 'base', fname)
             _,data = utils.load_slm_calculation(path, 0, 1)
@@ -1013,7 +1007,6 @@ def feedback():
         input_amplitudes = []
         num_points = 0
     return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points, input_amplitudes=input_amplitudes)
-"""
 
 ###################################################################################################
 
@@ -1473,7 +1466,7 @@ def load_config():
             for key in config:
                 if key == "pattern":
                     path = config["pattern"]
-                    #load_base(path)
+                    load_base(path)
                 #elif key == "fourier_calibration":
                     #send_load_fourier_calibration(config["fourier_calibration"])
                 elif key.startswith("file_correction"):
