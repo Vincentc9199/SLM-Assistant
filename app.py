@@ -621,7 +621,7 @@ def on_project_pattern():
 
 
 @app.route('/display_target_from_base')
-def display_target_from_file():
+def display_target_from_base():
     global iface
 
     if iface.cameraslm is not None:
@@ -1035,7 +1035,7 @@ def calculate_phase():
         iteration_number = data['iteration_number']
         guess_name = data['guess_name']
 
-        if iteration_number is None:
+        if not iteration_number:
             iteration_number = n_iterations
         else:
             iteration_number= int(iteration_number)
