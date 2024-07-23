@@ -316,13 +316,13 @@ def setup_camera():
                     print("Select a value for fliplr")
                     return redirect(url_for('setup_camera'))
                 
-                #camera = ThorCam(serial=serial_num, fliplr=fliplr)
+                camera = ThorCam(serial=serial_num, fliplr=fliplr)
 
                 # Add them to the settings dictionary
                 setup_camera_settings['camera_type'] = camera_type
                 setup_camera_settings['serial_num'] = serial_num
                 setup_camera_settings['fliplr'] = fliplr
-                #setup_camera_settings['camera'] = camera
+                setup_camera_settings['camera'] = camera
 
                 # Add settings to the list of cameras
                 camera_list.append(setup_camera_settings.copy())
