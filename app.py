@@ -499,6 +499,7 @@ def dashboard():
             get_screenshot()
     else:
         phase_info=None
+        slm_settings=None
     return render_template('dashboard.html', 
                            phase_info=phase_info,
                            slm_settings=slm_settings)
