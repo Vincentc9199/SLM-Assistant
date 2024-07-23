@@ -1278,7 +1278,7 @@ def save_add_phase():
             # Get the time the file was uploaded
             upload_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # Add the file name and upload time to the history
-            additional_save_history.append({'fname': save_path, 'upload_time': upload_time})
+            additional_save_history.append({'fname': save_name , 'upload_time': upload_time})
 
             print("Saved additional phase to: " + saved_additional_path)
 
