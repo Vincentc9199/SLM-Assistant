@@ -43,14 +43,6 @@
                 {% endif %}
             </table>
             
-            {% if phase_info %}
-            <div class="p-3">
-                <img src="{{ url_for('static', filename='images/total-phase.png') }}" class="img-fluid rounded" alt="Hologram Target">
-            </div>
-            {% endif %}
-
-            {% if phase_info[0] %}
-            
             <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
             <div id="plot_container">
@@ -122,6 +114,22 @@
             <div class="p-3">
                 <img src="{{ url_for('static', filename='images/slm_screenshot.png') }}" class="img-fluid rounded" alt="Screenshot of the SLM">
             </div>
+            {% endif %}
+
+            {% if camera_settings and not camera_settings['camera_type'] == 'virtual' %}
+            <form method="POST" action="{{ url_for('set_exposure') }}">
+                <div class="form-floating">
+                    <input class="form-control" type="number" id="exposure" name="exposure" placeholder="Set Exposure" step="any">
+                    <label for="exposure">Set Exposure</label>
+                </div>
+                <button type="submit" class="btn btn-outline-primary">Set exposure</button>
+            </form>
+            <form method="POST" action="{{ url_for('get_image') }}">
+                <button type="submit" class="btn btn-outline-primary">Get Image</button>
+            </form>
+            <h5>Camera Image</h5>
+            <img src="{{ url_for('static', filename='images/cam_img.png') }}" class="img-fluid rounded" alt="Hologram Target">
+
             {% endif %}
         </div>
     </div>

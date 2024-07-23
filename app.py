@@ -495,14 +495,17 @@ def dashboard():
     if iface.cameraslm is not None:
         phase_info = get_phase_info()
         slm_settings = iface.slm_settings
+        camera_settings = iface.camera_settings
         if slm_settings['display_num'] != 'virtual':
             get_screenshot()
     else:
         phase_info=None
         slm_settings=None
+        camera_settings=None
     return render_template('dashboard.html', 
                            phase_info=phase_info,
-                           slm_settings=slm_settings)
+                           slm_settings=slm_settings,
+                           camera_settings=camera_settings)
 
 
 ###################################################################################################
@@ -1603,36 +1606,47 @@ def camera():
 
 ###################################################################################################
 
-"""
+
 @app.route('/get_image', methods=['POST'])
 def get_image():
     global iface, directory
-    if iface.camera is not None and iface.camera_settings['camera_type'] != 'virtual' and request.method == 'POST':
-        img = iface.camera.get_image(attempts=20)
-        plt.figure(figsize=(24, 12))
-        plt.imshow(img)
-        path = os.path.join(directory, 'static', 'images', 'cam_img.png')
-        plt.savefig(path)
-        plt.close()
-        return redirect(url_for('camera'))
+    if request.method == 'POST':
+        if iface.cameraslm is not None:
+            if iface.camera_settings['camera_type'] != 'virtual':
+                img = iface.camera.get_image(attempts=20)
+                plt.figure(figsize=(24, 12))
+                plt.imshow(img)
+                path = os.path.join(directory, 'static', 'images', 'cam_img.png')
+                plt.savefig(path)
+                plt.close()
+            else:
+                print("Cannot get image from virtual camera")
+        else:
+            print("Select a camera and an SLM")
+
+        return redirect(url_for('dashboard'))
     
-    return redirect(url_for('camera'))
-"""
+    return redirect(url_for('dashboard'))
+
 
 ###################################################################################################
-"""
+
 @app.route('/set_exposure', methods=['POST'])
 def set_exposure():
     global iface, directory
-    if iface.camera is not None and iface.camera_settings['camera_type'] != 'virtual' and request.method == 'POST':
-        exposure = float(request.form['exposure'])
+    if request.method == 'POST':
+        if iface.cameraslm is not None:
+            if iface.camera_settings['camera_type'] != 'virtual':
+                exposure = float(request.form['exposure'])
+                iface.camera.set_exposure(exposure)
+            else:
+                print("Cannot get image from virtual camera")
+        else:
+            print("Select a camera and an SLM")
 
-        iface.camera.set_exposure(exposure)
-
-        return redirect(url_for('camera'))
+        return redirect(url_for('dashboard'))
     
-    return redirect(url_for('camera'))
-"""
+    return redirect(url_for('dashboard'))
 
 ###################################################################################################
 
