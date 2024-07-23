@@ -434,7 +434,7 @@ camera settings
 
 ###################################################################################################
 
-"""
+
 @app.route('/setup_slm_amp', methods=['GET', 'POST'])
 def setup_slm_amp():
     global iface
@@ -444,37 +444,35 @@ def setup_slm_amp():
             func = request.form['func']
             waist_x = request.form['waist_x']
             waist_y = request.form['waist_y']
-            try:
-                func = str(func)
+            
+            func = str(func)
 
-                if func == "gaussian":
-                    waist_x = float(waist_x)
-                    waist_x = np.array([waist_x])
-                    waist_y = float(waist_y)
-                    waist_y = np.array([waist_y])
+            if func == "gaussian":
+                waist_x = float(waist_x)
+                waist_x = np.array([waist_x])
+                waist_y = float(waist_y)
+                waist_y = np.array([waist_y])
 
-                    shape = iface.slm.shape
-                    xpix = (shape[1] - 1) *  np.linspace(-.5, .5, shape[1])
-                    ypix = (shape[0] - 1) * np.linspace(-.5, .5, shape[0])
+                shape = iface.slm.shape
+                xpix = (shape[1] - 1) *  np.linspace(-.5, .5, shape[1])
+                ypix = (shape[0] - 1) * np.linspace(-.5, .5, shape[0])
 
-                    x_grid, y_grid = np.meshgrid(xpix, ypix)
+                x_grid, y_grid = np.meshgrid(xpix, ypix)
 
-                    gaussian_amp = np.exp(-np.square(x_grid) * (1 / waist_x**2)) * np.exp(-np.square(y_grid) * (1 / waist_y**2))
+                gaussian_amp = np.exp(-np.square(x_grid) * (1 / waist_x**2)) * np.exp(-np.square(y_grid) * (1 / waist_y**2))
 
-                    iface.set_slm_amplitude(gaussian_amp)
-                    print(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
-                    #flash(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
-                else:
-                    print("Amp type not yet setup")
-            except:
-                print("Input correct datatypes")
+                iface.set_slm_amplitude(gaussian_amp)
+                print(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
+                #flash(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
+            else:
+                print("Amp type not yet setup")
         else:
             print('Select a camera and an SLM')
         
         return redirect(url_for('setup_slm_amp'))
     
     return render_template('setup_slm_amp.html')
-"""
+
 
 ###################################################################################################
 
@@ -1112,28 +1110,24 @@ def reset_pattern():
 
 ###################################################################################################
 
-"""
 target_path = ""
 
-@app.route('/targets', methods=['GET', 'POST'])
-def targets():
-    global main_path, directory, target_path
+@app.route('/target', methods=['GET', 'POST'])
+def target():
+    global directory, target_path
     if request.method == "POST":
         #fname = request.files['fname'].filename
         fname = request.form['fname']
         target_path = os.path.join(directory, 'data', 'base', fname)
 
-        return redirect(url_for('targets'))
+        return redirect(url_for('target'))
     
-    return render_template('targets.html')
+    return render_template('target.html')
 
 @app.route('/display_targets')
 def display_targets():
     global target_path
     
-    #targets = utils.get_target_from_file(target_path)
-    #x_coords = targets[0].tolist()
-    #y_coords = targets[1].tolist()
     _,data = utils.load_slm_calculation(target_path, 0, 1)
     input_targets = data['input_targets']
     x_coords = input_targets[0].tolist()
@@ -1144,7 +1138,7 @@ def display_targets():
     #flash("Displaying targets from: " + phase_mgr.base_source)
 
     return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
-"""
+
 
 ###################################################################################################
 ###################################################################################################
