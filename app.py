@@ -500,7 +500,8 @@ def dashboard():
     else:
         phase_info=None
     return render_template('dashboard.html', 
-                           phase_info=phase_info)
+                           phase_info=phase_info,
+                           slm_settings=slm_settings)
 
 
 ###################################################################################################
