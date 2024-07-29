@@ -86,7 +86,7 @@ def nelder_mead(f, initial_point, initial_step, tolerance, maxiter, alpha, gamma
                         continue
                     else:
                         # Replace all but the best point with shrunk points
-                        current_simplex = shrink(ordered_simplex, sigma)
+                        current_simplex = shrink(ordered_simplex, sigma, f)
                         print("Shrunk points")
                         continue
                         
@@ -104,7 +104,7 @@ def nelder_mead(f, initial_point, initial_step, tolerance, maxiter, alpha, gamma
                         continue
                     else:
                         # Replace all but the best point with shrunk points
-                        current_simplex = shrink(ordered_simplex, sigma)
+                        current_simplex = shrink(ordered_simplex, sigma, f)
                         print('Shrunk points')
                         continue       
 def f(p):
@@ -135,10 +135,11 @@ def contraction_outside(centroid, rho, reflected):
 def contraction_inside(centroid, rho, worst):
     return centroid + rho * (worst - centroid)
 
-def shrink(simplex, sigma):
+def shrink(simplex, sigma, f):
     best_point = simplex[0][0]
     for p in simplex[1:]:
         p[0] = best_point + sigma * (p[0] - best_point)
+        p[1] = f(p[0])
 
     return simplex
 
@@ -150,6 +151,10 @@ def g(p):
     y= p[1]
     return (x ** 2 + y - 11) ** 2 + (x + y ** 2 -7) ** 2
 
+def h(p):
+    x = p[0]
+    y = p[1]
+    return 2 * x ** 2 - 1.05 * x ** 4 + x ** 6 / 6 + x * y  + y ** 2
 
-sol = nelder_mead(g, np.array([0. ,0.]), 1., 0.0001, 50, 1, 2, 0.5, 0.5)
+sol = nelder_mead(h, np.array([5. ,5.]), 1., 0.0001, 50, 1, 2, 0.5, 0.5)
 print(sol)
