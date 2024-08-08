@@ -1,23 +1,28 @@
+# Flask related
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_socketio import SocketIO
 
+# From Client-Server
 import Interface
 import PhaseManager
 import CorrectedSLM
-#import CameraClient
 import utils
 
+# From SLMSuite
 from slmsuite.hardware.slms.screenmirrored import ScreenMirrored
 import slmsuite.hardware.slms.slm
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameras.camera import Camera
 
+# Screenshot related
+import screeninfo
+import mss.tools
+
+# General
 import os
 import numpy as np
 import yaml
 import ast
-import screeninfo
-import mss.tools
 import datetime
 import pyglet
 import threading
@@ -33,7 +38,15 @@ socketio = SocketIO(app)
 
 def start_flask_app():
     print("Starting Flask App")
+    # 0.0.0.0 serves the app on both localhost and using the private IP address
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
+
+"""
+Chose to use Flask Socket-IO instead of regular Flask app because this allows HTML page to
+communicate with the backend without using an http request, which is necessary to update the
+progress bar with the progress of the WGS algorithm.
+"""
+
 
 ###################################################################################################
 
