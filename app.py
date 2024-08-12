@@ -28,8 +28,6 @@ import pyglet
 import threading
 from matplotlib import pyplot as plt
 
-###################################################################################################
-
 #FLASK APP
 
 app = Flask(__name__)
@@ -38,17 +36,8 @@ socketio = SocketIO(app)
 
 def start_flask_app():
     print("Starting Flask App")
-    # 0.0.0.0 serves the app on both localhost and using the private IP address
+    # 0.0.0.0 serves the app on both localhost and the private IP address
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
-
-"""
-Chose to use Flask Socket-IO instead of regular Flask app because this allows HTML page to
-communicate with the backend without using an http request, which is necessary to update the
-progress bar with the progress of the WGS algorithm.
-"""
-
-
-###################################################################################################
 
 # INITIALIZE HISTORIES
 
@@ -58,26 +47,26 @@ additional_save_history = []
 config_load_history = []
 config_save_history = []
 
-
-###################################################################################################
-
 # GET CURRENT WORKING DIRECTORY
 
 directory = os.getcwd()
 
-###################################################################################################
-
 # PYGLET APP
 
+# Custom pyglet event loop
 def start_pyglet_app():
     print("Starting Pyglet App")
 
     while True:
         pyglet.clock.tick()
 
+        # Iterate over pyglet windows
         for window in pyglet.app.windows:
             window.switch_to()
+            # Dispatch window events 
             window.dispatch_events()
+
+# CUSTOM EVENT DISPATCHER FOR SLM WINDOWS
 
 class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def create_slm(self):
@@ -86,14 +75,16 @@ class SLMEventDispatcher(pyglet.event.EventDispatcher):
     def project_pattern(self):
         self.dispatch_event('on_project_pattern')
 
+# Register custom dispatchable events to create SLM windows and project phase patterns
 SLMEventDispatcher.register_event_type('on_create_slm')
 SLMEventDispatcher.register_event_type('on_project_pattern')
-dispatcher = SLMEventDispatcher()
 
-###################################################################################################
+# SLM event dispatcher object
+dispatcher = SLMEventDispatcher()
 
 # SETUP COMPUTATIONAL SPACE AND DEFAULT # OF ITERATIONS
 
+# Default values
 computational_space = (2048, 2048)
 n_iterations = 20
 
@@ -103,17 +94,20 @@ def setup_calculation():
 
     if request.method == 'POST':
         
+        # Get size of computational space from user
         size = request.form['computational_space']
         if size:
-            size = int(size)  
+            size = int(size)
+            # Update computational space  
             computational_space = (size, size)
             print("Updated Computational Space to: " + str(computational_space))
             #flash("Updated Computational Space to: " + str(computational_space))
             
-
+        # Get # iterations from user
         new_n_iterations = request.form['n_iterations']
         if new_n_iterations:
-            new_n_iterations = int(new_n_iterations)  
+            new_n_iterations = int(new_n_iterations)
+            # Update # iterations  
             n_iterations = new_n_iterations
             print("Updated Number of Iterations to: " + str(n_iterations))
             #flash("Updated Number of Iterations to: " + str(n_iterations))
@@ -124,10 +118,9 @@ def setup_calculation():
                            computational_space=computational_space, 
                            n_iterations=n_iterations)
 
-###################################################################################################
+# SETUP MANUALLY COMPUTED ANDOR TO K-SPACE CALIBRATION MATRIX
 
-# SETUP MANUALLY COMPUTED CALIBRATION MATRIX
-
+# Default values for Cs
 A = np.array([[-1.3347, 0.89309], [0.89306, 1.3414]])
 b = np.array([[1254.758], [277.627]])
 
@@ -136,7 +129,8 @@ def setup_calibration():
     global A, b
 
     if request.method == "POST":
-
+        
+        # Get user input
         top_left = request.form['top_left']
         top_right = request.form['top_right']
         bottom_left = request.form['bottom_left']
@@ -154,6 +148,7 @@ def setup_calibration():
             vector_x = float(vector_x)
             vector_y = float(vector_y)
 
+            # Update calibration matrix + vector
             A = np.array([[top_left, top_right], [bottom_left, bottom_right]])
             b = np.array([[vector_x], [vector_y]])
 
@@ -167,15 +162,15 @@ def setup_calibration():
     
     return render_template('setup_calibration.html', A=A, b=b)
 
-###################################################################################################
-
 # CONNECT TO AN SLM
 
 # List of dictionaries containing SLM settings
 slm_list = []
 
+# Initialize dictionary of SLM Settings
 setup_slm_settings = {}
 
+# Connect to hardware SLM
 @app.route('/setup_slm', methods=['GET', 'POST'])
 def setup_slm():
     global setup_slm_settings, slm_list
@@ -190,12 +185,13 @@ def setup_slm():
 
         if all([display_num, bitdepth, wav_design_um, wav_um]):
             
+            # Add settings to dictionary
             setup_slm_settings['display_num'] = int(display_num)
             setup_slm_settings['bitdepth'] = int(bitdepth)
             setup_slm_settings['wav_design_um'] = float(wav_design_um)
             setup_slm_settings['wav_um'] = float(wav_um)
     
-            # Call to create pyglet window
+            # Schedule SLM window creation event for dispatch
             pyglet.clock.schedule_once(lambda dt: dispatcher.create_slm(), 0)
         else:
             print("Missing one of the SLM settings")
@@ -204,23 +200,24 @@ def setup_slm():
 
     return render_template('setup_slm.html', slm_list=slm_list)
 
+# SLM window creation event
 @dispatcher.event
 def on_create_slm():
     global setup_slm_settings, slm_list
 
-    # Create pyglet window
+    # Create pyglet window for SLM with settings from dict
     slm = ScreenMirrored(setup_slm_settings['display_num'], 
                             setup_slm_settings['bitdepth'], 
                             wav_design_um=setup_slm_settings['wav_design_um'], 
                             wav_um=setup_slm_settings['wav_um'])
 
-    # Create phase manager for the slm
+    # Create phase manager for SLM
     phase_mgr = PhaseManager.PhaseManager(slm)
 
-    # Wrap together slm and phase manager
+    # Wrap together SLM and phase manager
     wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
 
-    # Add the wrapped slm to the settings
+    # Add the wrapped slm to settings dictionary
     setup_slm_settings['slm'] = wrapped_slm
 
     # Add settings dictionary to the list
@@ -228,17 +225,19 @@ def on_create_slm():
 
     print("Succesfully connected SLM on display: " + str(setup_slm_settings['display_num']))
 
+# Setup a virtual SLM in absence of hardware
 @app.route('/setup_virtual_slm', methods=['GET'])
 def setup_virtual_slm():
     global setup_slm_settings, slm_list
 
     if request.method == 'GET':
+        # Add settings to dict
         setup_slm_settings['display_num'] = "virtual"
         setup_slm_settings['bitdepth'] = "virtual"
         setup_slm_settings['wav_design_um'] = "virtual"
         setup_slm_settings['wav_um'] = "virtual"
 
-        # Create a virtual slm (default size 1272x1024)
+        # Create a abstract SLM object (default size 1272x1024)
         slm = slmsuite.hardware.slms.slm.SLM(1272, 1024)
 
         # Create phase manager for the slm
@@ -247,7 +246,7 @@ def setup_virtual_slm():
         # Wrap together slm and phase manager
         wrapped_slm = CorrectedSLM.CorrectedSLM(slm, phase_mgr)
 
-        # Add the wrapped slm to the settings
+        # Add the wrapped slm to the settings dict
         setup_slm_settings['slm'] = wrapped_slm
 
         # Add settings dictionary to the list
@@ -298,12 +297,12 @@ mask
 
 """
 
-###################################################################################################
-
 # CONENCT TO A CAMERA
 
 # List of camera settings dictionaries
 camera_list = []
+
+# Camera settings dict
 setup_camera_settings = {}
 
 @app.route('/setup_camera', methods=['GET', 'POST'])
@@ -311,16 +310,15 @@ def setup_camera():
     global setup_camera_settings, camera_list
 
     if request.method == 'POST':
+
         # Get camera settings from user
         camera_type = request.form['camera_type']
         serial_num = request.form['serial_num']
         fliplr = request.form['fliplr']
         
-        # Create the camera
         if all([camera_type, serial_num, fliplr]):
             
             if camera_type == "thorlabs":
-
                 if fliplr == 'False':
                     fliplr = False
                 elif fliplr == 'True':
@@ -329,15 +327,16 @@ def setup_camera():
                     print("Select a value for fliplr")
                     return redirect(url_for('setup_camera'))
                 
+                # Connect to ThorLabs camera
                 camera = ThorCam(serial=serial_num, fliplr=fliplr)
 
-                # Add them to the settings dictionary
+                # Add settings to the dict
                 setup_camera_settings['camera_type'] = camera_type
                 setup_camera_settings['serial_num'] = serial_num
                 setup_camera_settings['fliplr'] = fliplr
                 setup_camera_settings['camera'] = camera
 
-                # Add settings to the list of cameras
+                # Add settings dict to the list
                 camera_list.append(setup_camera_settings.copy())
 
                 print("Succesfully connected to camera of type: " + setup_camera_settings['camera_type']
@@ -351,18 +350,20 @@ def setup_camera():
 
     return render_template('setup_camera.html', camera_list=camera_list)
 
+# Create virtual camera in absence of hardware
 @app.route('/setup_virtual_camera', methods=['GET'])
 def setup_virtual_camera():
     global setup_camera_settings, camera_list
 
     if request.method == 'GET':
+
+        # Create abstract camera, default size 1024x1024
+        camera = Camera(1024, 1024)
+
+        # Add settings to dict
         setup_camera_settings['camera_type'] = 'virtual'
         setup_camera_settings['serial_num'] = 'virtual'
         setup_camera_settings['fliplr'] = 'virtual'
-
-        # Create virtual camera, default size 1024x1024
-        camera = Camera(1024, 1024)
-
         setup_camera_settings['camera'] = camera
 
         # Add settings to the list of cameras
@@ -373,7 +374,6 @@ def setup_virtual_camera():
         return redirect(url_for('setup_camera'))
 
     return redirect(url_for('setup_camera'))
-###################################################################################################
 
 # SETUP THE INTERFACE
 
@@ -383,35 +383,34 @@ iface = Interface.SLMSuiteInterface()
 @app.route('/setup_iface', methods=['GET', 'POST'])
 def setup_iface():
     global iface, slm_list, camera_list
+
     if request.method == 'POST':
-        # Get user selected slm index
+        # Get user selected SLM index
         slm_num = request.form['slm_num']
-        
-        
         slm_num = int(slm_num)
-        # Get corresponding slm settings
+
+        # Get settings for selected SLM
         slm_settings = slm_list[slm_num]
 
-        # Extract the CorrectedSLM
+        # Extract the SLM from settings
         slm = slm_settings['slm']
 
-        # Set as the SLM in iface
+        # Set SLM in iface
         iface.set_SLM(slm=slm, slm_settings=slm_settings)
 
         print("Selected SLM with display number: " + str(slm_settings['display_num']))
 
         # Get user selected camera index
         camera_num = request.form['camera_num']
-        
         camera_num = int(camera_num)
 
-        # Get corresponsing camera settings
+        # Get settings for selected camera
         camera_settings = camera_list[camera_num]
 
-        # Extract camera
+        # Extract camera from settings
         camera = camera_settings['camera']
 
-        # Set as the camera in iface
+        # Set camera in iface
         iface.set_camera(camera, camera_settings=camera_settings)
     
         print("Selected camera of type: " + str(camera_settings['camera_type']) + " with serial number" + str(camera_settings['serial_num']))
@@ -441,12 +440,8 @@ input targets
 slm settings
 camera settings
 """
-###################################################################################################
 
-# Fourier Calibration (Perform, Save and Load)
-
-###################################################################################################
-
+# SETUP CUSTOM SLM PLANE AMPLITUDE
 
 @app.route('/setup_slm_amp', methods=['GET', 'POST'])
 def setup_slm_amp():
@@ -454,13 +449,17 @@ def setup_slm_amp():
 
     if request.method == 'POST':
         if iface.cameraslm is not None:
-            func = request.form['func']
-            waist_x = request.form['waist_x']
-            waist_y = request.form['waist_y']
-            
-            func = str(func)
 
+            # Get function type input from user
+            func = request.form['func']
+            func = str(func)
+            
             if func == "gaussian":
+                # Get waist input from user
+                waist_x = request.form['waist_x']
+                waist_y = request.form['waist_y']
+
+                # Convert to arrays
                 waist_x = float(waist_x)
                 waist_x = np.array([waist_x])
                 waist_y = float(waist_y)
@@ -472,9 +471,12 @@ def setup_slm_amp():
 
                 x_grid, y_grid = np.meshgrid(xpix, ypix)
 
+                # Create 2D Gaussian
                 gaussian_amp = np.exp(-np.square(x_grid) * (1 / waist_x**2)) * np.exp(-np.square(y_grid) * (1 / waist_y**2))
 
+                # Set SLM-plane amplitude to 2D Gaussian
                 iface.set_slm_amplitude(gaussian_amp)
+
                 print(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
                 #flash(f"Set SLM amplitude to Gaussian with waist: ({waist_x}, {waist_y})")
             else:
@@ -486,63 +488,66 @@ def setup_slm_amp():
     
     return render_template('setup_slm_amp.html')
 
-
-###################################################################################################
-
-#Set Measured Amplitude Analytics
-
-###################################################################################################
-
-#Wavefront Calibration (Perform, Save, Load)
-
-###################################################################################################
-###################################################################################################
-###################################################################################################
-
-
+# Dashboard
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
     global iface
     if iface.cameraslm is not None:
+
+        # Get current phase info
         phase_info = get_phase_info()
+
+        # Get SLM and camera settings
         slm_settings = iface.slm_settings
         camera_settings = iface.camera_settings
+
         if slm_settings['display_num'] != 'virtual':
+            # Get screenshot of SLM
             get_screenshot()
+
     else:
         phase_info=None
         slm_settings=None
         camera_settings=None
+
     return render_template('dashboard.html', 
                            phase_info=phase_info,
                            slm_settings=slm_settings,
                            camera_settings=camera_settings)
 
 
-###################################################################################################
-
-# GET ALL OF THE PHASE INFORMATION IN THE PHASE MANAGER
+# GET CURRENT PHASE INFO IN PHASE MANAGER
 
 def get_phase_info():
     global iface, directory
 
     if iface.cameraslm is not None:
+
         # Get the phase manager
         phase_mgr = iface.slm.phase_mgr
+        
+        # Base pattern
 
-        # Get the file path of the base pattern
+        # File path
         base_str = phase_mgr.base_source
-
+        # Directory 
         base_path = os.path.join(directory, 'data', 'base')
+        # Just file name
         base_str = base_str.replace(base_path, "")
 
-        # Additional Pattern List
+
+        # Additional patterns
+
+        # Initialize list
         add_list = []
-        # Log of additional
+
+        # Get log of additional patterns
         log = phase_mgr.add_log
-        # Iterate over additional phase patterns and add to string
+        # Iterate over log and add to list
         for item in log:
             add_list.append(str(item[0]) + ":" + str(item[1]))
+
+        # Aperture
 
         # Get the aperture
         aperture = phase_mgr.aperture
@@ -557,36 +562,41 @@ def get_phase_info():
         print("Select a Camera and an SLM")
 
 
-###################################################################################################
-
 # TAKE A SCREENSHOT OF THE SLM
-
 
 def get_screenshot():
     global iface
     if iface.cameraslm is not None:
         if iface.slm_settings['display_num'] != 'virtual':
+
+            # Get list of connected displays
             displays = screeninfo.get_monitors()
             
+            # Get SLM display num
             display_num = iface.slm_settings['display_num']
 
+            # Select SLM display
             display = displays[display_num]
 
-            # Create area for screenshot
+            # Create rectangle for screenshot
             display_rect = {
                 "top": display.y,
                 "left": display.x,
                 "width": display.width,
                 "height": display.height
             }
-            output = "static/images/slm_screenshot.png"
-
+            
             # Take screenshot
             sct = mss.mss()
             screenshot = sct.grab(display_rect)
 
-            # Save to the picture file
+            # Relative path to save screenshot
+            output = "static/images/slm_screenshot.png"
+
+            # Save screenshot as png
             mss.tools.to_png(screenshot.rgb, screenshot.size, output=output)
+
+
             print("Succesfully saved screenshot to: " + output)
             #flash("Succesfully saved screenshot to: " + output)
         else:
@@ -596,10 +606,7 @@ def get_screenshot():
 
         
 
-###################################################################################################
-
-# PROJECT THE PHASE IN THE PHASE MANAGER ONTO THE SLM
-
+# PROJECT ALL PATTERNS IN PHASE MANAGER TO THE SLM
 
 @app.route('/project', methods=['POST'])
 def project():
@@ -608,6 +615,7 @@ def project():
     if request.method == 'POST':
         if iface.cameraslm is not None:
             if iface.slm_settings['display_num'] != 'virtual':
+                # Schedule pattern projection event for dispatch
                 pyglet.clock.schedule_once(lambda dt: dispatcher.project_pattern(), 0)
                 
             else:
@@ -619,20 +627,21 @@ def project():
     
     return redirect(url_for('dashboard'))
 
+# Pattern projection event
 @dispatcher.event
 def on_project_pattern():
     global iface
 
+    # Get phase manager
     phase_mgr = iface.slm.phase_mgr
+
+    # Write phase pattern to SLM
     iface.write_to_SLM(phase_mgr.base, phase_mgr.base_source)
     
     print("Succesfully projected to display: " + str(iface.slm_settings['display_num']))
 
 
-###################################################################################################
-
-# DISPLAY THE TARGET OF THE LOADED BASE PHASE IN THE PHASE MANAGER
-
+# DISPLAY TARGET OF LOADED BASE PATTERN
 
 @app.route('/display_target_from_base')
 def display_target_from_base():
@@ -641,17 +650,24 @@ def display_target_from_base():
     if iface.cameraslm is not None:
         phase_mgr = iface.slm.phase_mgr
 
+        # Check that base pattern loaded
         if phase_mgr.base_source:
-    
+            
+            # Get data from base pattern npz file
             _,data = utils.load_slm_calculation(phase_mgr.base_source, 0, 1)
+
+            # Extract target coordinates
             input_targets = data['input_targets']
             x_coords = input_targets[0].tolist()
             y_coords = input_targets[1].tolist()
+
+            # Create labels for the spots
             labels = list(range(1, len(x_coords) + 1))
 
             print("Displaying targets from: " + phase_mgr.base_source)
             #flash("Displaying targets from: " + phase_mgr.base_source)
 
+            # Return coords + labels for the plot
             return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
         else:
             print("No base phase is loaded")
@@ -659,19 +675,21 @@ def display_target_from_base():
         print("Select a camera and an SLM")
 
 
-
-###################################################################################################
-###################################################################################################
-###################################################################################################
-
-@app.route('/phase_summary', methods=['GET', 'POST'])
-def phase_summary():
+# Page containing all of the phase info
+@app.route('/phase_info', methods=['GET', 'POST'])
+def phase_info():
     global base_load_history, computational_space, n_iterations, A, b
-    phase_info = get_phase_info()
-    get_plots()
-    return render_template('phase_summary.html', phase_info=phase_info)
 
-def get_plots():
+    # Get current phase info in phase manager
+    phase_info = get_phase_info()
+
+    # Get plots of base, additional and total phase
+    get_phase_plots()
+
+    return render_template('phase_info.html', phase_info=phase_info)
+
+# Function to plot base, additional and total phase patterns in phase managet
+def get_phase_plots():
     global iface
     if iface.cameraslm is not None:
         phase_mgr = iface.slm.phase_mgr
@@ -680,8 +698,9 @@ def get_plots():
         phase_mgr.plot_total_phase()
     else:
         print("Select a camera and an SLM")
-###################################################################################################
 
+
+# Page to load phase patterns from files
 @app.route('/load_from_file', methods=['GET', 'POST'])
 def load_from_file():
     global base_load_history, additional_save_history, additional_load_history
@@ -691,25 +710,27 @@ def load_from_file():
                            additional_load_history=additional_load_history)
 
 
-###################################################################################################
-
 # LOAD BASE PHASE FROM SAVED FILE INTO PHASE MANAGER
 
-
+# Function to extract user input path for base pattern file
 @app.route('/use_pattern', methods=['POST'])
 def use_pattern():
     global directory, iface
 
     if request.method == 'POST':
         if iface.cameraslm is not None:
+
             # Get the file name input by the user
             fname = request.form['fname']
+            # Create file path
             path = os.path.join(directory, 'data', 'base', fname)
-
+            # Load base pattern from path
             load_base(path)
         else:
             print("Select a camera and an SLM")
+
         return redirect(url_for('load_from_file'))
+    
     return redirect(url_for('load_from_file'))
 
 
@@ -731,8 +752,6 @@ def load_base(path):
     base_load_history.append({'fname': path, 'upload_time': upload_time})
  
 
-###################################################################################################
-
 # CONVERT BETWEEN ANDOR CAMERA AND SLM K-SPACE COORDINATES
 
 def andor_to_k(x):
@@ -746,9 +765,8 @@ def k_to_andor(k):
     targets = np.matmul(invA, k - b)
     return targets
 
-###################################################################################################
 
-# CREATE A HOLOGRAM BY MANUALLY INPUTTING COORDINATES
+# CREATE TARGET BY MANUALLY INPUTTING COORDINATES
 
 @app.route('/manual', methods=['GET', 'POST'])
 def manual():
@@ -763,40 +781,41 @@ def manual():
             amplitudes = request.form.getlist('amplitudes')
             coord_type = request.form['coord_type']
 
-            
+            # Create 2D array for target coords
             x_coords = list(map(float, x_coords))
             y_coords = list(map(float, y_coords))
             targets = np.array([x_coords, y_coords])
 
+            # Convert to Andor camera coords
             if coord_type == 'andor':
                 targets = andor_to_k(targets)
                 print("Converted from Andor coords to k-space")
 
-            # Copy the targets
+            # Copy the target coords to put in file
             target_data_for_input = np.copy(targets)
 
             print("Received Targets:" + str(targets))
             
-            # Convert amplitudes to floats
+            # Convert amps to float
             amplitudes = list(map(float, amplitudes))
-            # Create 1D numpy array containing amplitudes
+            # Create 1D array containing amps
             amp_data = np.array(amplitudes)
-            # Create a copy of what the user input
+            # Create a copy to put in file
             amp_data_for_input = np.copy(amp_data)
 
             print("Received amplitudes: " + str(amp_data))
             
-            # Store the input target and amplitudes in the iface
+            # Store the input target and amps in the iface
             iface.input_targets = target_data_for_input
             iface.input_amplitudes = amp_data_for_input
             
-            basis = 'knm'
-            # Change to ij if fourier calibration
-
-            # Create the hologram in the iface
+            # Specify coord basis
+            basis = 'knm' # Change to ij if fourier calibration
+            
+            # Create the hologram
             iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, basis=basis, socketio=socketio)
 
-            # Save an image of the target hologram
+            # Save plot of the target
             iface.plot_target()
 
             print("Succesfully created hologram")
@@ -807,8 +826,6 @@ def manual():
 
     return render_template('manual.html')
 
-###################################################################################################
-
 # CREATE A HOLOGRAM AS A LATTICE FILLING UP A BOX
 
 @app.route('/lattice_box', methods=['GET', 'POST'])
@@ -817,19 +834,35 @@ def lattice_box():
 
     if request.method == 'POST':
         if iface.cameraslm is not None:
+
+            # Get user input
+
+            #Lattive vector 1
             lv11 = request.form['lv11']
             lv12 = request.form['lv12']
+
+            # Lattice vector 2
             lv21 = request.form['lv21']
             lv22 = request.form['lv22']
+
+            # Box offset
             offset_x = request.form['offset_x']
             offset_y = request.form['offset_y']
+
+            # Box size
             width = request.form['width']
             height = request.form['height']
+
+            # Starting coord (in box without offset)
             center_x = request.form['center_x']
             center_y = request.form['center_y']
+
+            # Box buffer
             edge_buffer = request.form['edge_buffer']
+
             coord_type = request.form['coord_type']
 
+            # Convert to float
             lv11 = float(lv11)
             lv12 = float(lv12)
             lv21 = float(lv21)
@@ -842,41 +875,60 @@ def lattice_box():
             center_y = float(center_y)
             edge_buffer = float(edge_buffer)
 
+            # Define lattice vectors
             lattice_vectors = [
                 np.array([lv11, lv21]),
                 np.array([lv12, lv22])]
+            
+            # Box shape
             image_shape = (width, height)
+
+            # Box offset
             offset = (offset_x, offset_y)
+
+            # Starting point
             center_pix = (center_x, center_y)
+
+            # Generate lattice
             spots, x_coords, y_coords = generate_lattice(image_shape, lattice_vectors, offset, center_pix, edge_buffer)
 
+            # Target coords in 2D array
             x_coords = list(map(float, x_coords))
             y_coords = list(map(float, y_coords))
             targets = np.array([x_coords, y_coords])
 
+            # Convert to Andor
             if coord_type == 'andor':
                 targets = andor_to_k(targets)
                 print("Converted from Andor coords to k-space")
 
-            # Copy the targets
+            # Copy the targets to put in file
             target_data_for_input = np.copy(targets)
 
             print("Received Targets:" + str(targets))
 
+            # Get # of spots
             num_spots = len(x_coords)
 
+            # Create array of 1s for amps
             amp_data = np.ones(num_spots, dtype = float)
 
+            # Copy amps to put in file
             amp_data_for_input = np.copy(amp_data)
 
             print("Received amplitudes: " + str(amp_data))
             
+            # Save input targets and amps in iface
             iface.input_amplitudes = amp_data_for_input
             iface.input_targets = target_data_for_input
             
+            # Coord basis
             basis = 'knm'
 
+            # Create hologram
             iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, basis=basis, socketio=socketio)
+
+            # Save plot of target
             iface.plot_target()
             
             print("Succesfully created hologram")
@@ -887,8 +939,9 @@ def lattice_box():
     
     return render_template('lattice_box.html')
 
-def generate_lattice( #Help me speed up this function, please!
-    image_shape, lattice_vectors, offset=(0, 0), center_pix='image', edge_buffer=2):
+# Function to fill a box with a lattice
+# https://stackoverflow.com/questions/6141955/efficiently-generate-a-lattice-of-points-in-python
+def generate_lattice(image_shape, lattice_vectors, offset=(0, 0), center_pix='image', edge_buffer=2):
 
     ##Preprocessing. Not much of a bottleneck:
     if center_pix == 'image':
@@ -921,57 +974,66 @@ def generate_lattice( #Help me speed up this function, please!
                 y_coords.append(lp[1])
     return lattice_points, x_coords, y_coords
 
-###################################################################################################
-
 # CREATE A HOLOGRAM BY DRAWING ON A CANVAS OR GRID
 
+# Page for canvas
 @app.route('/canvas', methods=['GET', 'POST'])
 def canvas():
     return render_template('canvas.html')
 
+# Page for grid
 @app.route('/grid', methods=['GET', 'POST'])
 def grid():
     return render_template('grid.html')
 
+# Receive data from canvas / grid
 @app.route('/submit_points', methods=['POST'])
 def submit_points():
     global iface, computational_space, socketio
     if iface.cameraslm is not None:
+
+        # Get the user input
         data = request.json
         x_coords = data['Coords1']
         y_coords = data['Coords2']
         amplitudes = data['amplitudes']
         coord_type = data['coord_type']
         
-        
+        # 2D array for target coords
         x_coords = list(map(float, x_coords))
         y_coords = list(map(float, y_coords))
         targets = np.array([x_coords, y_coords])
 
+        # Conver to Andor coords
         if coord_type == 'andor':
                 targets = andor_to_k(targets)
                 print("Converted from Andor coords to k-space")
 
-        # Copy the targets
+        # Copy the targets to input in file
         target_data_for_input = np.copy(targets)
 
         print("Received Targets:" + str(targets))
 
-        
-        # Convert amplitudes to floats
+        # Convert amps to float
         amplitudes = list(map(float, amplitudes))
-        # Create 1D numpy array containing amplitudes
+        # Create 1D numpy array containing amps
         amp_data = np.array(amplitudes)
+        # Copy amps to put in file
         amp_data_for_input = np.copy(amp_data)
 
         print("Received amplitudes: " + str(amp_data))
         
+        # Save targets and amps to put in file
         iface.input_amplitudes = amp_data_for_input
         iface.input_targets = target_data_for_input
 
+        # Coord basis
         basis = 'knm'
         
+        # Create hologram
         iface.set_hologram(computational_shape=computational_space, target_spot_array=targets, target_amps=amp_data, basis=basis, socketio=socketio)
+
+        # Save plot of target
         iface.plot_target()
         
         return jsonify({'status': 'success'})
@@ -979,36 +1041,46 @@ def submit_points():
         print("Select a camera and an SLM")
         return jsonify({'status': 'error'})
     
-###################################################################################################
 
-# CREATE A HOLOGRAM FROM THE COORDINATES AND AMPLITUDES IN A FILE
+# LOAD TARGET COORDINATES AND AMPLITUDES FROM BASE PATTERN FILE FOR FEEDBACK
 
-
+# Function to load targets coords and amps from file
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     global directory, iface
 
     if request.method == 'POST':
         if iface.cameraslm is not None:
-
+            
+            # Get user input file name
             fname = request.form['fname']
+            # Get new amplitudes from user
             input_amps = request.form['input_amps']
             
+            # File path
             path = os.path.join(directory, 'data', 'base', fname)
+            # Load data from base pattern file
             _,data = utils.load_slm_calculation(path, 0, 1)
+            # Extract target coords
             input_targets = data['input_targets']
             x_coords = input_targets[0].tolist()
             y_coords = input_targets[1].tolist()
 
+            # Check if user input new amplitudes
             if input_amps:
+                # Create list for new amplitudes
                 input_amps_list = input_amps.split(',')
                 input_amplitudes = list(map(float, input_amps_list))
 
             else:
+                # If user did not, extract the previous set of amplitudes saved in the file
                 input_amplitudes = data['input_amplitudes']
 
+            # # of points in target
             num_points = len(x_coords)
+
             return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points, input_amplitudes=input_amplitudes)
+        
         else:
             print("Select a camera and an SLM")
             return redirect(url_for('feedback'))
@@ -1017,10 +1089,13 @@ def feedback():
         y_coords = []
         input_amplitudes = []
         num_points = 0
+
     return render_template('feedback.html', x_coords=x_coords, y_coords=y_coords, num_points=num_points, input_amplitudes=input_amplitudes)
 
-###################################################################################################
 
+# CALCULATE THE BASE PATTERN FOR A TARGET
+
+# Page to calculate base pattern
 @app.route('/calculate', methods=['GET', 'POST'])
 def calculate():
     global iface
@@ -1031,17 +1106,23 @@ def calculate():
         base_source = ""
     return render_template('calculate.html', hologram=hologram, base_source=base_source)
 
+# Function to receive calculation settings and perform calculation of the hologram base phase pattern
 @app.route('/calculate_phase', methods=['POST'])
 def calculate_phase():
     global n_iterations, computational_space, directory, iface
 
     if iface.hologram is not None:
-
+        
+        # Receive user input
         data = request.json
+        # Save name for file
         save_name = data["save_name"]
+        # num iterations for algo
         iteration_number = data['iteration_number']
+        # File name of initial guess
         guess_name = data['guess_name']
 
+        # Set to default is no iteration # input by user
         if not iteration_number:
             iteration_number = n_iterations
         else:
@@ -1050,37 +1131,47 @@ def calculate_phase():
         # Initialize guess phase
         guess_phase = None
 
-        # If there is a guess file path
+        # Extract initial guess
         if guess_name:
-            # Add the pattern folder path
+            # Get file path
             guess_path = os.path.join(directory, 'data', 'base', guess_name)
-            # Extract guess phase pattern
+            # Extract data
             _,data = utils.load_slm_calculation(guess_path, 1, 1)
-            # Check if data was in the file
+            # Check if phase pattern is in the file
             if "raw_slm_phase" in data:
-                # Store guess phase pattern
+                # Extract guess phase pattern
                 guess_phase = data["raw_slm_phase"]
+                # Set as current phase in hologram
                 iface.hologram.phase = guess_phase
                 print("Stored initial guess phase pattern")
             else:
                 print ("Cannot initiate the guess phase, since it was not saved")
 
-        # Calculate the base pattern to create the target using GS or WGS algo 
-
+        # Calculate the base pattern to create target 
         iface.optimize(iteration_number)
 
+        # Plot near-field
         iface.plot_slmplane()
+        # Plot far-field
         iface.plot_farfield()
+        # Plot calculation stats
         iface.plot_stats()
 
+        # Save calculated phase to file
         saved_pattern_path = save_calculation(save_name)[:-9]
         
+        # Load calculated phase from saved file
         load_base(saved_pattern_path)
+
         print("Finished Calculation, Save and Load")
         return jsonify({'status': 'success'})
+    
     else:
         print("Must have a hologram to calculate base phase")
         return jsonify({'status': 'error'})
+
+
+# SAVE CALCULATED PHASE PATTERN
 
 def save_calculation(save_name):
     global directory, iface
@@ -1100,10 +1191,12 @@ def save_calculation(save_name):
 
     # Save the calculated pattern to a new file
     config_path, saved_pattern_path, err = iface.save_calculation(save_options)
+
     print("Saved calculation to: " + saved_pattern_path)
     return saved_pattern_path
 
-###################################################################################################
+
+# RESET BASE PATTERN
 
 @app.route('/reset_pattern', methods=['GET', 'POST'])
 def reset_pattern():
@@ -1111,8 +1204,11 @@ def reset_pattern():
 
     if request.method == "POST":
         if iface.cameraslm is not None:
+
             phase_mgr = iface.slm.phase_mgr
+            # Reset base pattern
             phase_mgr.reset_base()
+
             print("Reset Base Phase")
         else:
             print("Select a camera and an SLM")
@@ -1121,50 +1217,61 @@ def reset_pattern():
 
     return redirect(url_for('phase_summary'))
 
-###################################################################################################
+# DISPLAY TARGET FROM FILE WITHOUT LOADING
 
+# File path of target to load
 target_path = ""
 
+# Page to get the file name from user
 @app.route('/target', methods=['GET', 'POST'])
 def target():
     global directory, target_path
     if request.method == "POST":
-        #fname = request.files['fname'].filename
+        
+        # Get user input file name
         fname = request.form['fname']
+        # Create file path
         target_path = os.path.join(directory, 'data', 'base', fname)
 
         return redirect(url_for('target'))
     
     return render_template('target.html')
 
+# Function called to get target data for plot
 @app.route('/display_targets')
 def display_targets():
     global target_path
     
+    # Extract target data from base pattern file
     _,data = utils.load_slm_calculation(target_path, 0, 1)
+
+    # Target coords
     input_targets = data['input_targets']
     x_coords = input_targets[0].tolist()
     y_coords = input_targets[1].tolist()
+
+    # Labels for spots
     labels = list(range(1, len(x_coords) + 1))
 
     print("Displaying targets from: " + target_path)
     #flash("Displaying targets from: " + phase_mgr.base_source)
-
+    
+    # Send target coords and labels to plot function on html page
     return jsonify({'x': x_coords, 'y': y_coords, 'labels': labels})
 
 
-###################################################################################################
-###################################################################################################
-###################################################################################################
-
+# RESET ADDITIONAL PHASE PATTERNS
 
 @app.route('/reset_additional_phase', methods=['POST'])
 def reset_additional_phase():
     global iface
     if request.method == 'POST':
         if iface.cameraslm is not None:
+
             phase_mgr = iface.slm.phase_mgr
+            # Reset additional phase
             phase_mgr.reset_additional()
+
             print("Reset Additional Phase") 
         else:
             print("Select a camera and an SLM")
@@ -1173,15 +1280,18 @@ def reset_additional_phase():
     return redirect(url_for('phase_summary'))
 
 
-###################################################################################################
+# RESET APERTURE
 
 @app.route('/reset_aperture', methods=['POST'])
 def reset_aperture():
     global iface
     if request.method == 'POST':
         if iface.cameraslm is not None:
+
             phase_mgr = iface.slm.phase_mgr
+            # Reset aperture
             phase_mgr.reset_aperture()
+
             print("Aperture Reset")
   
         else:
@@ -1191,8 +1301,8 @@ def reset_aperture():
     
     return redirect(url_for('phase_summary'))
 
-###################################################################################################
 
+# LOAD ADDITIONAL PHASE PATTERNS FROM FILE
 
 @app.route('/use_add_phase', methods=['GET', 'POST'])
 def use_add_phase():
